@@ -1,11 +1,11 @@
-function setup_user(username,projectName,bidsDir,githubDir)
+function setup_user(projectName,bidsDir,githubDir,fsDir)
 
 % user specific locations
 switch(username)
     
     case 'puti'
         
-        freesurferDir = '/Applications/freesurfer/7.2.0';
+        fsDir = '/Applications/freesurfer/7.2.0';
 end
 
 switch(projectName)
@@ -46,9 +46,8 @@ fslDir = '/usr/local/fsl';
 PATH = getenv('PATH'); setenv('PATH', [PATH ':' fslDir '/bin']); % add freesurfer/bin to path
 setenv('FSLDIR', fslDir);
 setenv('PATH', sprintf('/usr/local/bin:%s', getenv('PATH'))); % add /usr/local/bin to PATH
-
-setenv('PATH', [freesurferDir '/bin:' getenv('PATH')]);
+setenv('PATH', [fsDir '/bin:' getenv('PATH')]);
 setenv('PATH', [getenv('PATH') ':/usr/local/fsl/bin']);
-setenv('FREESURFER_HOME', freesurferDir);
-addpath(genpath(fullfile(freesurferDir, 'matlab')));
+setenv('FREESURFER_HOME', fsDir);
+addpath(genpath(fullfile(fsDir, 'matlab')));
 setenv('SUBJECTS_DIR', [bidsDir '/derivatives/freesurfer']);
