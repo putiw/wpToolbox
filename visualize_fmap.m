@@ -1,5 +1,9 @@
 function cb = visualize_fmap(projectDir,whichHemi,fsnativeidx,dotsize,range,cmap)
 
+% -------------------------------------------------------------------------
+warning('This function is no longer supported or updated. Use at your own risk.');
+% -------------------------------------------------------------------------
+
 patch = [projectDir '/derivatives/freesurfer/fsaverage/surf/' lower(whichHemi) 'h.cortex.patch.flat'];
 inflate = [projectDir '/derivatives/freesurfer/fsaverage/surf/' lower(whichHemi) 'h.inflated'];
 patch = read_patch(patch);

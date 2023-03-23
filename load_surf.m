@@ -1,5 +1,9 @@
 function DATA = load_surf(dataDir,sub,ses,run,scantype,hemi,detrendcase,cutoff)
 
+% -------------------------------------------------------------------------
+warning('This function is no longer supported or updated. Use at your own risk.');
+% -------------------------------------------------------------------------
+
 % Inputs:
 %     dataDir:     Path to project folder containing the derivative folder; E.g. '/Volumes/Vision/MRI/Decoding'
 %     sub:            Subject ID; E.g. 'sub-0201'
@@ -10,7 +14,7 @@ function DATA = load_surf(dataDir,sub,ses,run,scantype,hemi,detrendcase,cutoff)
 %     detrendcase:    Different detrending options; E.g. 'fft', 'linear', 'roi-average', etc
 
 % Outputs:
-%     samples:        data (8 directions by 20 runs by 40962 vertices by 2 hemisphere)
+%     DATA:        data (8 directions by 20 runs by 40962 vertices by 2 hemisphere)
 
 % Allocate data
 DATA_temp = cell(numel(ses).*numel(run),numel(hemi));

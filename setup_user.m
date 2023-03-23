@@ -1,13 +1,5 @@
 function setup_user(projectName,bidsDir,githubDir,fsDir)
 
-% user specific locations
-switch(username)
-    
-    case 'puti'
-        
-        fsDir = '/Applications/freesurfer/7.2.0';
-end
-
 switch(projectName)
     case 'Decoding'
         % setup toolboxes
@@ -38,8 +30,6 @@ switch(projectName)
         addpath(genpath(fullfile(githubDir, 'gifti'))); % https://github.com/gllmflndn/gifti        
         
 end
-
-
 
 % freesurfer settings
 fslDir = '/usr/local/fsl';

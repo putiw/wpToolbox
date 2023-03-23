@@ -1,26 +1,38 @@
 function datafiles = load_data(bidsDir,task,space,fileType,sub,ses,runs)
 
+% Inputs:
+%     bidsDir:        Path to project folder containing the derivative folder -e.g. '/Volumes/Vision/MRI/Decoding'
+%     task:           task name from the scans -e.g. 'Cue'
+%     space:          data space -e.g. 'fsnative', 'fsaverage6', etc
+%     fileType:       data file type -e.g. 'gii', 'mgh', 'nii', etc
+%     sub:            Subject ID -e.g. 'sub-0201'
+%     ses:            Session ID -e.g. 'ses-01'
+%     runs:            Run ID -e.g. [1:10]
 
-if isempty(ses) 
-     subj_dir = sprintf('%s/derivatives/fmriprep/%s/func',bidsDir,sub);
+% Outputs:
+%     datafiles:        data stored in 1 by #runs cell matrix
+
+
+if isempty(ses)
+    subDir = sprintf('%s/derivatives/fmriprep/%s/func',bidsDir,sub);
 else
-    subj_dir = sprintf('%s/derivatives/fmriprep/%s/%s/func',bidsDir,sub,ses);
+    subDir = sprintf('%s/derivatives/fmriprep/%s/%s/func',bidsDir,sub,ses);
 end
 
 
 switch space % switch between volumn or surface
     
-    case 'T1w' 
+    case 'T1w'
         
         datafiles = cell(1,length(runs));
         
         for iRun = 1:length(runs)
             
-              whichRun = runs(iRun);
+            whichRun = runs(iRun);
             
-            disp(['Loading: ' sprintf('%s/*%s*%s_*%s_desc-preproc_bold%s',subj_dir,task,num2str(whichRun),space,fileType)]);
-            tmpDir = dir(sprintf('%s/*task-%s_run-%s_*%s_desc-preproc_bold%s*',subj_dir,task,num2str(whichRun),space,fileType));
-            datafiles{iRun} = niftiread([subj_dir '/' tmpDir.name]);            
+            disp(['Loading: ' sprintf('%s/*%s*%s_*%s_desc-preproc_bold%s',subDir,task,num2str(whichRun),space,fileType)]);
+            tmpDir = dir(sprintf('%s/*task-%s_run-%s_*%s_desc-preproc_bold%s*',subDir,task,num2str(whichRun),space,fileType));
+            datafiles{iRun} = niftiread([subDir '/' tmpDir.name]);
             
         end
         
@@ -29,46 +41,44 @@ switch space % switch between volumn or surface
     case {'fsnative','fsaverage','fsaverage5','fsaverage6'}
         
         hemi = {'L';'R'};
-        
-        % check to see if data exists in the desired fileType, if not,
-        % mir_convert it from gii
+        datafiles = cell(1,length(runs)); % initialize for all the runs
         
         for iRun = 1:length(runs)
-            whichRun = runs(iRun);
+            
+            whichRun = runs(iRun); % current run #
+            func = cell(2,1); % initialize for 2 hemi
+            
             for iH = 1:numel(hemi)
-                input = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_run-%s_space-fsnative_hemi-%s_bold.func.gii',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),hemi{iH});
-                output = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_run-%s_space-fsnative_hemi-%s_bold.func.%s',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),hemi{iH},fileType);
+                
+                fileName = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_run-%s_space-fsnative_hemi-%s_bold.func',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),hemi{iH});
+                input = [fileName '.gii'];
+                output = [fileName fileType]; % the file type that we want to load
+                
+                % check to see if data exists in the desired fileType, if not,
+                % mir_convert file from gii
                 if ~exist(output)
+                    disp(['File does not exist in ' fileType ' format, converting from .gii ...'])
                     system(['mri_convert ' input ' ' output]);
                 end
+                
+                disp(['Loading: ' output])
+                
+                switch fileType
+                    case '.gii'
+                        tmp  = gifti(output);
+                        func{iH}  = func.cdata;
+                    case {'.mgh','.mgz'}
+                        tmp = MRIread(output);
+                        func{iH} = squeeze(tmp.vol);
+                    otherwise
+                        error('file type not valid')
+                end
+                datafiles{iRun} = cat(1,func{:});
+                
+                
             end
         end
-         
-        % load surface data
-        datafiles = cell(1,length(runs));         
-        for iRun = 1:length(runs)           
-            whichRun = runs(iRun);
-            tempDirL = dir(sprintf('%s/*_task-%s_run-%s_*%s_hemi-%s*%s',subj_dir,task,num2str(whichRun),space,hemi{1},fileType));
-            tempDirR = dir(sprintf('%s/*_task-%s_run-%s_*%s_hemi-%s*%s',subj_dir,task,num2str(whichRun),space,hemi{2},fileType));
-            disp(['Loading: ' tempDirL.name])
-            disp(['Loading: ' tempDirR.name])
-            
-            switch fileType
-                case '.gii'
-                    funcL  = gifti(sprintf('%s/%s',subj_dir,tempDirL.name));
-                    funcL  = funcL.cdata;
-                    funcR  = gifti(sprintf('%s/%s',subj_dir,tempDirR.name));
-                    funcR  = funcR.cdata;
-                case {'.mgh','.mgz'}                                                          
-                    funcL = MRIread(sprintf('%s/%s',subj_dir,tempDirL.name));
-                    funcL = squeeze(funcL.vol);
-                    funcR = MRIread(sprintf('%s/%s',subj_dir,tempDirR.name));
-                    funcR = squeeze(funcR.vol);
-                otherwise
-                    error('file type not valid')
-            end
-            datafiles{iRun} = cat(1,funcL,funcR);
-        end
+        
     otherwise
         error('data space not valid')
 end
