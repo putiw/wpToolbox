@@ -7,30 +7,25 @@ switch(projectName)
         addpath(genpath(fullfile(githubDir, 'MRI_tools'))); % https://github.com/WinawerLab/MRI_tools
         addpath(genpath(fullfile(githubDir, 'analyzePRF'))); % https://github.com/cvnlab/analyzePRF
         addpath(genpath(fullfile(githubDir, 'jsonlab'))); % https://github.com/fangq/jsonlab
-        addpath(genpath(fullfile(githubDir, 'cvncode'))); % https://github.com/cvnlab/cvncode
-        addpath(genpath(fullfile(githubDir, 'knkutils'))); % https://github.com/cvnlab/knkutils
-        addpath(genpath(fullfile(githubDir, 'gifti'))); % https://github.com/gllmflndn/gifti
         addpath(genpath(fullfile(githubDir, 'fMRI-Matlab'))); % https://github.com/gllmflndn/gifti
-        addpath(genpath(fullfile(githubDir, 'fMRI-Matlab'))); % https://github.com/gllmflndn/gifti
-        addpath(genpath(fullfile('/Users/pw1246/Documents/GitHub/GLMsingle')));
             
     case 'CueIntegration2023'
-        addpath(genpath(fullfile(githubDir, 'cvncode'))); % https://github.com/cvnlab/cvncode
-        addpath(genpath(fullfile(githubDir, 'gifti'))); % https://github.com/gllmflndn/gifti
         addpath(genpath(fullfile(githubDir, 'GLMdenoise'))); % https://github.com/cvnlab/GLMdenoise
-        addpath(genpath(fullfile(githubDir, 'knkutils'))); % https://github.com/cvnlab/knkutils
         addpath(genpath(fullfile(githubDir, 'nsdcode'))); % https://github.com/cvnlab/nsdcode
-        addpath(genpath(fullfile(githubDir, 'GLMsingle')));
 
     case 'Loc2023'
-        addpath(genpath(fullfile(githubDir, 'cvncode'))); % https://github.com/cvnlab/cvncode
-        addpath(genpath(fullfile(githubDir, 'knkutils'))); % https://github.com/cvnlab/knkutils
         addpath(genpath(fullfile(githubDir, 'GLMdenoise'))); % https://github.com/cvnlab/GLMdenoise
         addpath(genpath(fullfile(githubDir, 'nsdcode'))); % https://github.com/cvnlab/nsdcode
-        addpath(genpath(fullfile(githubDir, 'gifti'))); % https://github.com/gllmflndn/gifti        
         
 end
 
+% general toolboxes
+        addpath(genpath(fullfile(githubDir, 'cvncode'))); % https://github.com/cvnlab/cvncode
+        addpath(genpath(fullfile(githubDir, 'knkutils'))); % https://github.com/cvnlab/knkutils
+        addpath(genpath(fullfile(githubDir, 'gifti'))); % https://github.com/gllmflndn/gifti
+        addpath(genpath(fullfile(githubDir, 'GLMsingle')));
+
+        
 % freesurfer settings
 fslDir = '/usr/local/fsl';
 PATH = getenv('PATH'); setenv('PATH', [PATH ':' fslDir '/bin']); % add freesurfer/bin to path
