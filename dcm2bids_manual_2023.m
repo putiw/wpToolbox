@@ -3,14 +3,14 @@ close all
 clc
 
 %% set path
-sub = '0248';
+sub = '0306';
 ses = '01';
-task = 'loc';
-task1 = 'loc';
+task = 'cue';
+scanTask = 'cue';
 dcmbin = '/Users/pw1246/Downloads/dcm2niix/console/dcm2niix';
 projDir = '/Users/pw1246/Desktop/MRI/CueIntegration2023/';
-projDir = '/Users/pw1246/Desktop/MRI/Loc2023/';
-flyDir = '/Users/pw1246/Downloads/flywheel 7';
+%projDir = '/Users/pw1246/Desktop/MRI/Loc2023/';
+flyDir = '/Users/pw1246/Downloads/flywheel 2';
 
 
 %% move flywheel dcm files into bids sourcedata
@@ -21,7 +21,8 @@ s2 = sprintf('%s%s/sub-%s_ses-%s_Br_%s',projDir,'sourcedata',sub,ses,task);
 movefile(s1,s2);
 
 %% dcm -> nii
-%s2 = '/Users/pw1246/Desktop/MRI/CueIntegration2023/sourcedata/Fw--Rokerslab-Cue_Isolation';
+%s2 = '/Users/pw1246/Desktop/MRI/CueIntegration2023/sourcedata/sub-0248_ses-02_Br_cue';
+%s2 = '/Users/pw1246/Desktop/MRI/Loc2023/sourcedata/sub-0248_ses-02_Br_loc';
 % s2 = '/Volumes/Vision/MRI/Raw/NYUAD/sub-0248/sub-248_ses-01_Br_3D_Cue_Isolation/Fw--Rokerslab-Cue_Isolation';
 scan = dir(s2);
 
@@ -41,7 +42,7 @@ for ii = 1:numel(scan)
     dcmDir = [scan(ii).folder '/' scan(ii).name];
     
     %% if current folder is func
-    if contains(scan(ii).name,['func-bold_task-' task1 '_run-'])
+    if contains(scan(ii).name,['func-bold_task-' scanTask '_run-'])
         
         % go into the folder and unzip the dicom files
         cd(dcmDir)
@@ -51,8 +52,11 @@ for ii = 1:numel(scan)
         system([dcmbin ' -b y -f %f -m y -o ' funcDir ' -s y -t y -z y ' dcmDir])
         
         % rename to BIDS format
+
         n1 = sprintf('%s/%s',funcDir,scan(ii).name);
-        n2 = sprintf('%s/%s',funcDir,['sub-' sub '_ses-' ses '_task-' task '_run-' scan(ii).name(length(scan(ii).name)-1:end) '_bold']);
+        
+        tmp = strsplit(n1,'_');
+        n2 = sprintf('%s/%s',funcDir,['sub-' sub '_ses-' ses '_task-' task '_' char(tmp(contains(tmp,'run'))) '_bold']);
         
         movefile([n1 '.nii.gz'],[n2 '.nii.gz']);
         movefile([n1 '.json'],[n2 '.json']);
@@ -63,7 +67,7 @@ for ii = 1:numel(scan)
         str = fileread([n2 '.json']);
         val = jsondecode(str);
         
-        val.TaskName = "Cue";
+        val.TaskName = task;
         
         str = jsonencode(val);
         str = strrep(str, ',"', sprintf(',\n"'));
@@ -109,9 +113,13 @@ for ii = 1:numel(scan)
         
         system([dcmbin ' -b y -f %f -m y -o ' outDir ' -s y -t y -z y ' dcmDir])
         
-        n1 = sprintf('%s/%s',outDir,scan(ii).name);
-        n2 = sprintf('%s/%s',outDir,['sub-' sub '_ses-' ses '_dir-' scan(ii).name(24:25) '_run-' scan(ii).name(17:18) '_epi']);
         
+        n1 = sprintf('%s/%s',outDir,scan(ii).name);
+        
+        tmp = strsplit(n1,'_');
+        n2 = sprintf('%s/%s',outDir,['sub-' sub '_ses-' ses '_' char(tmp(contains(tmp,'dir'))) '_' char(tmp(contains(tmp,'run'))) '_epi']);
+        
+                
         movefile([n1 '.nii.gz'],[n2 '.nii.gz']);
         movefile([n1 '.json'],[n2 '.json']);
         

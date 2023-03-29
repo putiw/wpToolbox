@@ -22,11 +22,9 @@ tmp = cat(2,tmp{:})';
 label = cat(1,dsCon{:});
 
 whichTrial = find(label(:,1)==1);
-
 sample = zeros(numel(whichTrial),15);
-
 for iTrial = 1:numel(whichTrial)
-    sample(iTrial,1:numel(whichTrial(iTrial):min(whichTrial(iTrial)+14,numel(label)))) = nanmean(tmp(whichTrial(iTrial):min(whichTrial(iTrial)+14,numel(label)),:),2)';
+    sample(iTrial,:) = nanmean(tmp(whichTrial(iTrial):min(whichTrial(iTrial)+14,numel(label)),:),2)';
 end
 
 plot(sample','-','Color',[myColor 0.1])
