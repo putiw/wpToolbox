@@ -3,14 +3,13 @@ close all
 clc
 
 %% set path
-sub = '0306';
+sub = '0368';
 ses = '01';
-task = 'cue';
-scanTask = 'cue';
+task = 'restingstate';
+scanTask = 'restingstate';
 dcmbin = '/Users/pw1246/Downloads/dcm2niix/console/dcm2niix';
-projDir = '/Users/pw1246/Desktop/MRI/CueIntegration2023/';
-%projDir = '/Users/pw1246/Desktop/MRI/Loc2023/';
-flyDir = '/Users/pw1246/Downloads/flywheel 2';
+projDir = '/Users/pw1246/Desktop/MRI/VRI/';
+flyDir = '/Users/pw1246/Downloads/flywheel 3';
 
 
 %% move flywheel dcm files into bids sourcedata
@@ -21,9 +20,6 @@ s2 = sprintf('%s%s/sub-%s_ses-%s_Br_%s',projDir,'sourcedata',sub,ses,task);
 movefile(s1,s2);
 
 %% dcm -> nii
-%s2 = '/Users/pw1246/Desktop/MRI/CueIntegration2023/sourcedata/sub-0248_ses-02_Br_cue';
-%s2 = '/Users/pw1246/Desktop/MRI/Loc2023/sourcedata/sub-0248_ses-02_Br_loc';
-% s2 = '/Volumes/Vision/MRI/Raw/NYUAD/sub-0248/sub-248_ses-01_Br_3D_Cue_Isolation/Fw--Rokerslab-Cue_Isolation';
 scan = dir(s2);
 
 rawDir = sprintf('%s%s/sub-%s/ses-%s/',projDir,'rawdata',sub,ses);
@@ -94,7 +90,7 @@ for ii = 1:numel(scan)
     end
 end
 
-%% fmap
+% fmap
 
 for ii = 1:numel(scan)
     
