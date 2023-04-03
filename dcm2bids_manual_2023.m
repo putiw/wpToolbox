@@ -3,7 +3,7 @@ close all
 clc
 
 %% set path
-sub = '0368';
+sub = '0357';
 ses = '01';
 task = 'restingstate';
 scanTask = 'restingstate';
