@@ -24,6 +24,7 @@ switch space % switch between volumn or surface
     
     case 'T1w'
         
+        %
         datafiles = cell(1,length(runs));
         
         for iRun = 1:length(runs)
@@ -50,7 +51,7 @@ switch space % switch between volumn or surface
             
             for iH = 1:numel(hemi)
                 
-                fileName = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_run-%s_space-%s_hemi-%s_bold.func',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),space,hemi{iH});
+                fileName = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_dir-PA_run-%s_space-%s_hemi-%s_bold.func',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),space,hemi{iH});
                 input = [fileName '.gii'];
                 output = [fileName fileType]; % the file type that we want to load
                 
