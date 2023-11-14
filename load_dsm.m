@@ -15,7 +15,7 @@ for iRun = 1:nRuns
             ds(2:2:end,:) = repmat([0 0 0 0],size(ds,1)/2,1);
             ds = [ds repmat([0;1],size(ds,1)/2,1)];
             ds = repelem(ds,t.blockDur(iRun),1);
-            if strcmp(t.subject{1}, 'sub-0392')
+            if strcmp(t.subject{1}, 'sub-0392') && t.version(iRun) == 1
             ds = ds(1:t.nCon(iRun)*t.blockDur(iRun)*t.nRep(iRun)+t.mod(iRun),:);
             ds(end-t.mod(iRun):end,:) = 0;
             else
