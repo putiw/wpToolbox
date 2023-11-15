@@ -1,48 +1,191 @@
-function view_fv(subjectDir, resultsDir, varargin)
-    % Define paths for both hemispheres' inflated surfaces
-    lh_inflated = fullfile(subjectDir, 'surf', 'lh.inflated');
-    rh_inflated = fullfile(subjectDir, 'surf', 'rh.inflated');
+function view_fv(subject, bidsDir, varargin)
 
-    % Initialize overlay command strings for each hemisphere
-    lh_overlayCmd = '';
-    rh_overlayCmd = '';
+% view overlay ontop of inflated surface in freeview
 
-    % Loop through each overlay name provided in varargin
-    for i = 1:length(varargin)
-        overlayName = varargin{i};
-        lh_overlay = fullfile(resultsDir, sprintf('lh.%s.mgz', overlayName));
-        rh_overlay = fullfile(resultsDir, sprintf('rh.%s.mgz', overlayName));
+% subject - e.g. 'sub-0248' - subject ID
+% bidsDir - e.g. '~/Documents/MRI/bids' - BIDS directory
+% hemi - e.g. - 'l' - optional, if not defined then we will plot both hemisphere
+% varargin - e.g. 'maps/motion' - 'subfolderName/mgzFileName' - look for matching files only in the defined subfolder within derivatives
+%          - e.g. 'motion' - 'mgzFileName' - look for matching files across all subfolders in the derivatives directory
 
-        % Append to the overlay command strings for each hemisphere
+% example usage:
+% subject = 'sub-0248'
+% bidsDir = '~/Documents/MRI/bids';
+% view_fv(subject, bidsDir, 'maps/motion', 'myelin', 'prf:eccen');
+% % or
+% view_fv(subject, bidsDir, 'lh', 'maps:mt+2', 'cd2');
 
-        lh_overlayCmd = [lh_overlayCmd, sprintf(':overlay=%s', lh_overlay)];
-        rh_overlayCmd = [rh_overlayCmd, sprintf(':overlay=%s', rh_overlay)];
+% to-do. dir is TOO SLOW
 
-        switch overlayName
+bidsDir = [bidsDir '/derivatives'];
+%% check if BIDS directory exsits
+if ~exist(bidsDir,'dir')
+    error(['BIDS derivatives directory does not exist <' bidsDir '>'])
+end
+%% check if subject directory exsits
+if ~contains(subject, 'sub-')
+else
+    tmp = strsplit(subject, '-');
+    subject = tmp{2};
+end
+subfolder = dir(sprintf('%s/freesurfer/*%s*',bidsDir,subject)); % in freesurfer folder check for any subject folder matches our subject ID
+subfolderName = subfolder([subfolder.isdir]).name; % get the folder name 
+subjectDir = sprintf('%s/freesurfer/%s',bidsDir,subfolderName); % build the path for subject directory
+if ~exist(subjectDir,'dir') % check if this subject directory exists
+    error(['subject freesurfer directory for <' subject '> does not exist: <' subjectDir '>'])
+end
+%% check if this subject has more than one names
+folderParts=strsplit(subfolderName, '_'); % break the folder name in parts
+tmpID=strsplit(folderParts{1}, '-'); % check first part
+subject = []; 
+subject{1} = ['sub-' tmpID{2}]; % get AD ID
+if contains(subfolderName, 'NY')
+    tmpID=strsplit(folderParts{2}, '-'); % check second part
+    subject{2} = ['sub-' tmpID{2}]; % get NY ID
+else
+    subject{2} = 'NA'; % no NY ID
+end
+if contains(subfolderName, 'XXXX') % no AD ID
+    subject{1} = 'NA';
+end
+%% check if freeview exsits
+[status, ~] = system('which freeview');
+if status == 0
+    fvCmd = 'freeview';
+else
+    fvDir = dir(fullfile('/Applications/freesurfer/**/bin/freeview'));
+    if ~exist(fvDir,'file')
+        error('where''s your freeview?')
+    else
+        fvCmd = sprintf('%s/freeview', fvDir.folder);
+    end
+end
+%% check which hemisphere to plot
+if ismember(lower(varargin{1}), {'l','lh','left'})
+    hemi = {'l'};
+    varargin = varargin(2:end);
+elseif ismember(lower(varargin{1}), {'r','rh','right'})
+    hemi = {'r'};
+    varargin = varargin(2:end);
+else
+    hemi = {'l','r'};
+end
+%% loop through each hemisphere
+cmd = [];
+for whichHemi = 1:numel(hemi)
 
-            case 'myelin'
+    % find the inflated surface
+    inflated = sprintf('%s/surf/%sh.inflated',subjectDir,hemi{whichHemi});
+    % check if the inflated surf file exists
+    if ~exist(inflated,'file')
+        error(['<' hemi{whichHemi} 'h.inflate> not found in <' subjectDir '/surf>']);
+    end
 
-                lh_overlayCmd = [lh_overlayCmd,':overlay_custom=/Users/pw1246/Desktop/MRI/bigbids/derivatives/freesurfer/sub-0248/surf/mye'];
-                rh_overlayCmd = [rh_overlayCmd,':overlay_custom=/Users/pw1246/Desktop/MRI/bigbids/derivatives/freesurfer/sub-0248/surf/mye'];
+    % loop through each overlay name provided in varargin
+    overlayCmd = ''; % prepare the command for overlay
+    for whichOverlay = 1:length(varargin)
+        % parse the input to get the folder, overlay, and colormap name
+        [folder, fileParts] = parse_input(varargin{whichOverlay},bidsDir,subject,hemi{whichHemi});
+        overlayName = fileParts{2};
+        colormapName = fileParts{3}; % rename it so we don't forget what this fileParts variable is
+        for whichFolder = 1:numel(folder)
+            whereOverlay = sprintf('%s/%sh.%s.mgz', folder{whichFolder}, hemi{whichHemi}, overlayName);
+            overlayCmd = [overlayCmd, sprintf(':overlay=%s', whereOverlay)];
+            % add the customized color map if we have one
+            overlayCmd = custom_colormap(bidsDir,overlayName,colormapName,overlayCmd,hemi{whichHemi});
+        end
+    end
+    if isempty(overlayCmd)
+    warning(['none of the overlay files are found for ' hemi{whichHemi} 'h hemi'])
+    end
+    cmd = sprintf('%s -f %s%s',cmd,inflated,overlayCmd);
+end
 
-            case 'eccen'
+disp('loading ...')
+system(sprintf('%s%s &',fvCmd, cmd));
 
-                lh_overlayCmd = [lh_overlayCmd,':overlay_custom=/Users/pw1246/Desktop/MRI/bigbids/derivatives/freesurfer/eccentricity_color_scale'];
-                rh_overlayCmd = [rh_overlayCmd,':overlay_custom=/Users/pw1246/Desktop/MRI/bigbids/derivatives/freesurfer/eccentricity_color_scale'];
+end
 
-            case 'angle_adj'
+%% sub functions
+%% which folders are my overlay files in
+function [folder, fileParts] = parse_input(whichFile,bidsDir,subject,iHemi)
 
-                lh_overlayCmd = [lh_overlayCmd,':overlay_custom=/Users/pw1246/Desktop/MRI/bigbids/derivatives/freesurfer/angle_corr_lh_color_scale'];
-                rh_overlayCmd = [rh_overlayCmd,':overlay_custom=/Users/pw1246/Desktop/MRI/bigbids/derivatives/freesurfer/angle_corr_rh_color_scale'];
+    % create temp variable fileParts that is {whichFolder} {whichOverlay} {whichColormap} {whichHemi}
+    fileParts = regexp(whichFile, '[:/]', 'split'); % if folder and colormap are specified
+    if ~contains(whichFile,'/') % if folder is not specified
+        fileParts = ['**' fileParts];
+    end
+    if ~contains(whichFile,':') % if colormap is not specified
+        fileParts = [fileParts 'NA'];
+    end
 
-            otherwise
-
+    fileParts = [fileParts iHemi]; % which hemi
+    
+    folder = {};
+    for iSub = 1:numel(subject)
+        tmpFolder = find_my_files(subject{iSub},bidsDir,fileParts); % look for the overlay files
+        if isfolder(tmpFolder)
+            folder = [folder tmpFolder];
         end
     end
 
-    % Construct the Freeview command
-    cmd = sprintf('freeview -f %s%s -f %s%s', lh_inflated, lh_overlayCmd, rh_inflated, rh_overlayCmd);
+    if isempty(folder)
+        warning(['<' iHemi 'h.' fileParts{2} '.mgz> not found in any subfolders for this subject']);
+        warning(['skipping ' fileParts{2} ' for ' iHemi 'h']);
+    end
 
-    % Run the Freeview command
-    system(cmd);
+end
+
+%% return all sub folders that contains wanted overlay mgz file
+function folder = find_my_files(whichSub,bidsDir,fileParts)
+    tmpFiles = dir(sprintf('%s/%s/%s/%s%sh.%s.mgz', bidsDir, fileParts{1}, whichSub, '**/', fileParts{4}, fileParts{2}));
+    folder = cell(numel(tmpFiles),1);
+    for iFile = 1:length(tmpFiles)
+        if ~tmpFiles(iFile).isdir
+            folder{iFile}  = tmpFiles(iFile).folder;
+        end
+    end
+end
+
+%% load customized color maps if we have
+function overlayCmd = custom_colormap(bidsDir,overlayName,colormapName, overlayCmd, iHemi)
+    
+    switch overlayName
+        case 'myelin'
+            whichMap = 'mye';
+        case 'eccen'
+            whichMap = 'eccentricity_color_scale';
+        case'angle_adj'
+            whichMap = ['angle_corr_' iHemi 'h_color_scale'];
+        otherwise
+            whichMap = [];
+    end
+    
+    if ismember(overlayName,{'mt+1','mt+2','mt+12','cd','cdavg','cd1','cd2','bio1','cw','ccw','cwccw','in','out','inout','upper','lower'})
+        whichMap = 'rainbow'; % default rainbow color map for bold beta weights 0:0.1:0.7
+    end
+    
+    if ~strcmp(colormapName,'NA') % mannual input overwrites default
+        whichMap = colormapName;
+    end
+    
+    whereMap = sprintf('%s/freesurfer/%s',bidsDir,whichMap); % find the colormap   
+    if isfile(whereMap)
+        overlayCmd = [overlayCmd,sprintf(':overlay_custom=%s',whereMap)];
+    end
+    
+    if ~isempty(whichMap) && ~exist(whereMap) % if it is specified but doesn't exist
+        disp(['customized color map <' whichMap '> not found in <' bidsDir '/freesurfer/>'])
+        % check if we have a default map for it
+        if ismember(overlayName,{'mt+1','mt+2','mt+12','cd','cdavg','cd1','cd2','bio1','cw','ccw','cwccw','in','out','inout','upper','lower'})
+            disp(['we will use default color map <rainbow> for ' iHemi 'h.' overlayName '.mgz'])
+            whereMap = sprintf('%s/freesurfer/%s',bidsDir,'rainbow'); % find the colormap
+            if isfile(whereMap)
+                overlayCmd = [overlayCmd,sprintf(':overlay_custom=%s',whereMap)];
+            else
+                disp(['could not locate default color map <rainbow> in <' bidsDir '/freesurfer/>'])
+            end
+        end
+    end
+
 end
