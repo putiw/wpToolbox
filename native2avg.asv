@@ -1,6 +1,9 @@
-function freeview_cmd = view_fv(subject, bidsDir, varargin)
 
-% view overlay ontop of inflated surface in freeview
+function freeview_cmd = native2avg(subject, bidsDir, varargin)
+
+% this scripts takes mgz file name, subject ID, and bidsDir to convert
+% everything into fsaverage space. 
+
 
 % subject - e.g. 'sub-0248' - subject ID
 % bidsDir - e.g. '~/Documents/MRI/bids' - BIDS directory
@@ -90,7 +93,9 @@ for whichHemi = 1:numel(hemi)
         overlayName = fileParts{2};
         colormapName = fileParts{3}; % rename it so we don't forget what this fileParts variable is
         for whichFolder = 1:numel(folder)
+            % find fsnative mgz
             whereOverlay = sprintf('%s/%sh.%s.mgz', folder{whichFolder}, hemi{whichHemi}, overlayName);
+            % convert to fsaverage
             overlayCmd = [overlayCmd, sprintf(':overlay=%s', whereOverlay)];
             % add the customized color map if we have one
             overlayCmd = custom_colormap(bidsDir,overlayName,colormapName,overlayCmd,hemi{whichHemi});
@@ -144,7 +149,6 @@ end
 
 %% return all sub folders that contains wanted overlay mgz file
 function folder = find_my_files(whichSub,bidsDir,fileParts)
-    %tmpFiles = dir(sprintf('%s/%s/%s/%s%sh.%s.mgz', bidsDir, fileParts{1}, whichSub, '**/', fileParts{4}, fileParts{2}));
 
     subDirs = dir(fullfile(bidsDir, '*'));
     

@@ -1,6 +1,9 @@
-function freeview_cmd = view_fv(subject, bidsDir, varargin)
 
-% view overlay ontop of inflated surface in freeview
+function freeview_cmd = native2avg(subject, bidsDir, varargin)
+
+% this scripts takes mgz file name, subject ID, and bidsDir to convert
+% everything into fsaverage space. 
+
 
 % subject - e.g. 'sub-0248' - subject ID
 % bidsDir - e.g. '~/Documents/MRI/bids' - BIDS directory
@@ -144,7 +147,6 @@ end
 
 %% return all sub folders that contains wanted overlay mgz file
 function folder = find_my_files(whichSub,bidsDir,fileParts)
-    %tmpFiles = dir(sprintf('%s/%s/%s/%s%sh.%s.mgz', bidsDir, fileParts{1}, whichSub, '**/', fileParts{4}, fileParts{2}));
 
     subDirs = dir(fullfile(bidsDir, '*'));
     
