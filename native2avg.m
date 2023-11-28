@@ -80,14 +80,14 @@ else
     hemi = {'l','r'};
 end
 %% loop through each hemisphere
-tmpmgz0 = MRIread(fullfile(sprintf('%s/freesurfer/fsaverage',bidsDir), 'mri', 'orig.mgz'));
+tmpmgz0 = MRIread(fullfile(sprintf('%s/freesurfer/fsaverage',derivDir), 'mri', 'orig.mgz'));
 for whichHemi = 1:numel(hemi)
 
     % loop through each overlay name provided in varargin
 
     for whichOverlay = 1:length(varargin)
         % parse the input to get the folder, overlay, and colormap name
-        [folder, fileParts] = parse_input(varargin{whichOverlay},bidsDir,subject,hemi{whichHemi});
+        [folder, fileParts] = parse_input(varargin{whichOverlay},derivDir,subject,hemi{whichHemi});
         overlayName = fileParts{3};
         for whichFolder = 1:numel(folder)
             % find fsnative mgz
@@ -96,7 +96,7 @@ for whichHemi = 1:numel(hemi)
             tmp = MRIread(whereOverlay);
             tmp = squeeze(tmp.vol);
             % convert to fsaverage
-            tmp = cvntransfertosubject(subfolderName,'fsaverage', tmp, [hemi{whichHemi} 'h'], 'nearest', 'orig', 'orig');
+            tmp = cvntransfertosubject(subfolderName,'fsaverage', tmp(:), [hemi{whichHemi} 'h'], 'nearest', 'orig', 'orig');
             % use an empty mgz to write the value to 
             tmpmgz = tmpmgz0;
             tmpmgz.vol = [];
@@ -149,9 +149,9 @@ function [folder, fileParts] = parse_input(whichFile,derivDir,subject,iHemi)
 end
 
 %% return all sub folders that contains wanted overlay mgz file
-function folder = find_my_files(whichSub,bidsDir,fileParts)
+function folder = find_my_files(whichSub,derivDir,fileParts)
 
-    subDirs = dir(fullfile(bidsDir, '*'));
+    subDirs = dir(fullfile(derivDir, '*'));
     
     if strcmp(fileParts{1},'**')
         subDirs = subDirs([subDirs.isdir] & ~ismember({subDirs.name}, {'.', '..', 'derivatives','freesurfer'}));
@@ -161,7 +161,7 @@ function folder = find_my_files(whichSub,bidsDir,fileParts)
 
     tmpFiles = [];
     for subDir = subDirs'
-        tmpFiles = [tmpFiles; dir(fullfile(derivDir, subDir.name, subject, fileParts{2}, [fileParts{5} 'h.' fileParts{3} '.mgz']))];
+        tmpFiles = [tmpFiles; dir(fullfile(derivDir, subDir.name, whichSub, fileParts{2}, [fileParts{5} 'h.' fileParts{3} '.mgz']))];
     end
 
     folder = cell(numel(tmpFiles),1);
