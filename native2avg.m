@@ -103,7 +103,11 @@ for whichHemi = 1:numel(hemi)
             tmpmgz.vol = tmp;
             % find path to save the fsavg file
             tmp = strsplit(folder{whichFolder},'/');
-            tmp(end) = []; % get rid of subject folder
+            if contains(tmp(end),'ses')
+                tmp(end-1:end) = []; % get rid of subject and session folder
+            else
+                tmp(end) = []; % get rid of subject folder
+            end
             tmp = [strjoin(tmp, '/') '/fsaverage'];
             if ~isfolder(tmp) mkdir(tmp); end
             filename = [hemi{whichHemi} 'h.' overlayName '.' subject{1} '.mgz'];
