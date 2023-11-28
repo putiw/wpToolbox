@@ -61,9 +61,11 @@ for ii = 1:length(tmpDir)
         fvDir = [tmpDir(ii).folder '/' tmpDir(ii).name];
         setenv('FREESURFER_HOME', fvDir); 
         fvCmd = [fvDir '/bin/freeview'];
+        addpath([fvDir '/matlab']);
     end
 end
 setenv('SUBJECTS_DIR', [bidsDir '/freesurfer']);
+
 %% check which hemisphere to plot
 if ismember(lower(varargin{1}), {'l','lh','left'})
     hemi = {'l'};
@@ -75,43 +77,40 @@ else
     hemi = {'l','r'};
 end
 %% loop through each hemisphere
-cmd = [];
+tmpmgz0 = MRIread(fullfile(sprintf('%s/freesurfer/fsaverage',bidsDir), 'mri', 'orig.mgz'));
 for whichHemi = 1:numel(hemi)
 
-    % find the inflated surface
-    inflated = sprintf('%s/surf/%sh.inflated',subjectDir,hemi{whichHemi});
-    % check if the inflated surf file exists
-    if ~exist(inflated,'file')
-        error(['<' hemi{whichHemi} 'h.inflate> not found in <' subjectDir '/surf>']);
-    end
-
     % loop through each overlay name provided in varargin
-    overlayCmd = ''; % prepare the command for overlay
+
     for whichOverlay = 1:length(varargin)
         % parse the input to get the folder, overlay, and colormap name
         [folder, fileParts] = parse_input(varargin{whichOverlay},bidsDir,subject,hemi{whichHemi});
         overlayName = fileParts{2};
         colormapName = fileParts{3}; % rename it so we don't forget what this fileParts variable is
         for whichFolder = 1:numel(folder)
+            % find fsnative mgz
             whereOverlay = sprintf('%s/%sh.%s.mgz', folder{whichFolder}, hemi{whichHemi}, overlayName);
-            overlayCmd = [overlayCmd, sprintf(':overlay=%s', whereOverlay)];
-            % add the customized color map if we have one
-            overlayCmd = custom_colormap(bidsDir,overlayName,colormapName,overlayCmd,hemi{whichHemi});
+            % load fsnative mgz
+            tmp = MRIread(whereOverlay);
+            tmp = squeeze(tmp.vol);
+            % convert to fsaverage
+            tmp = cvntransfertosubject(subfolderName,'fsaverage', tmp, [hemi{whichHemi} 'h'], 'nearest', 'orig', 'orig');
+            % use an empty mgz to write the value to 
+            tmpmgz = tmpmgz0;
+            tmpmgz.vol = [];
+            tmpmgz.vol = tmp;
+            % find path to save the fsavg file
+            tmp = strsplit(folder{whichFolder},'/');
+            tmp(end) = []; % get rid of subject folder
+            tmp = [strjoin(tmp, '/') '/fsaverage'];
+            if ~isfolder(tmp) mkdir(tmp); end
+            filename = [hemi{whichHemi} 'h.' overlayName '.' subject{1} '.mgz'];
+            disp(['saving ' [hemi{whichHemi} 'h.' overlayName '.' subject{1} '.mgz ...']])
+            MRIwrite(tmpmgz, fullfile(tmp, filename));
         end
     end
-    if isempty(overlayCmd)
-        warning(['none of the overlay files are found for ' hemi{whichHemi} 'h hemi'])
-    end
-    whichLabel = sprintf('%s/label/Glasser2016/%sh.MT.label', subjectDir,hemi{whichHemi});
-    if isfile(whichLabel)
-        cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=0.5',cmd,inflated,overlayCmd,whichLabel);
-    else
-        cmd = sprintf('%s -f %s%s',cmd,inflated,overlayCmd);
-    end
+    
 end
-
-freeview_cmd = sprintf('%s%s &',fvCmd, cmd);
-system(freeview_cmd);
 
 end
 
@@ -167,47 +166,4 @@ function folder = find_my_files(whichSub,bidsDir,fileParts)
             folder{iFile}  = tmpFiles(iFile).folder;
         end
     end
-end
-
-%% load customized color maps if we have
-function overlayCmd = custom_colormap(bidsDir,overlayName,colormapName, overlayCmd, iHemi)
-    
-    switch overlayName
-        case 'myelin'
-            whichMap = 'mye';
-        case 'eccen'
-            whichMap = 'eccentricity_color_scale';
-        case'angle_adj'
-           whichMap  = ['angle_corr_' iHemi 'h_color_scale'];
-        otherwise
-            whichMap = [];
-    end
-    
-    if ismember(overlayName,{'mt+1','mt+2','mt+12','bio1','cw','ccw','cwccw','in','out','inout','upper','lower'})
-        whichMap = 'rainbow'; % default rainbow color map for bold beta weights 0:0.1:0.7
-    end
-    
-    if ~strcmp(colormapName,'NA') % mannual input overwrites default
-        whichMap = colormapName;
-    end
-    
-    whereMap = sprintf('%s/freesurfer/%s',bidsDir,whichMap); % find the colormap   
-    if isfile(whereMap)
-        overlayCmd = [overlayCmd,sprintf(':overlay_custom=%s',whereMap)];
-    end
-    
-    if ~isempty(whichMap) && ~exist(whereMap) % if it is specified but doesn't exist
-        disp(['customized color map <' whichMap '> not found in <' bidsDir '/freesurfer/>'])
-        % check if we have a default map for it
-        if ismember(overlayName,{'mt+1','mt+2','mt+12','bio1','cw','ccw','cwccw','in','out','inout','upper','lower'})
-            disp(['we will use default color map <rainbow> for ' iHemi 'h.' overlayName '.mgz'])
-            whereMap = sprintf('%s/freesurfer/%s',bidsDir,'rainbow'); % find the colormap
-            if isfile(whereMap)
-                overlayCmd = [overlayCmd,sprintf(':overlay_custom=%s',whereMap)];
-            else
-                disp(['could not locate default color map <rainbow> in <' bidsDir '/freesurfer/>'])
-            end
-        end
-    end
-
 end

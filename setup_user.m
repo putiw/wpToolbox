@@ -31,8 +31,10 @@ end
         
 % freesurfer settings
 fslDir = '/usr/local/fsl';
-PATH = getenv('PATH'); setenv('PATH', [PATH ':' fslDir '/bin']); % add freesurfer/bin to path
+PATH = getenv('PATH'); 
+setenv('PATH', [PATH ':' fslDir '/bin']); % add freesurfer/bin to path
 setenv('FSLDIR', fslDir);
+
 setenv('PATH', sprintf('/usr/local/bin:%s', getenv('PATH'))); % add /usr/local/bin to PATH
 setenv('PATH', [fsDir '/bin:' getenv('PATH')]);
 setenv('PATH', [getenv('PATH') ':/usr/local/fsl/bin']);
