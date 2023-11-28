@@ -109,7 +109,11 @@ for whichHemi = 1:numel(hemi)
     if isempty(overlayCmd)
         warning(['none of the overlay files are found for ' hemi{whichHemi} 'h hemi'])
     end
+    if ismember(whichSub,{'fsaverage','fsaverage6'})
+    whichLabel = sprintf('%s/label/Glasser2016/%sh.Glasser2016.23.label', subjectDir,hemi{whichHemi});
+    else
     whichLabel = sprintf('%s/label/Glasser2016/%sh.MT.label', subjectDir,hemi{whichHemi});
+    end
     if isfile(whichLabel)
         cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=0.5',cmd,inflated,overlayCmd,whichLabel);
     else
