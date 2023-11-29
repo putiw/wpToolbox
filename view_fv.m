@@ -184,24 +184,23 @@ end
 
 %% load customized color maps if we have
 function overlayCmd = custom_colormap(derivDir,overlayName,colormapName, overlayCmd, iHemi)
+   
+    if contains(overlayName,'eccen')
+        whichMap = 'eccentricity_color_scale';
     
-    switch overlayName
-        case 'myelin'
-            whichMap = 'mye';
-        case 'eccen'
-            whichMap = 'eccentricity_color_scale';
-        case'angle_adj'
-           whichMap  = ['angle_corr_' iHemi 'h_color_scale'];
-        otherwise
-            whichMap = [];
-    end
     
-    if ismember(overlayName,{'mt+1','mt+2','mt+12','bio1','cw','ccw','cwccw','in','out','inout','upper','lower'})
+elseif contains(overlayName,'angle_adj')
+        whichMap  = ['angle_corr_' iHemi 'h_color_scale'];
+    
+    
+    elseif ismember(overlayName,{'mt+1','mt+2','mt+12','bio1','cw','ccw','cwccw','in','out','inout','upper','lower'})
         whichMap = 'rainbow'; % default rainbow color map for bold beta weights 0:0.1:0.7
-    end
     
-    if ~strcmp(colormapName,'NA') % mannual input overwrites default
+    
+    elseif ~strcmp(colormapName,'NA') % mannual input overwrites default
         whichMap = colormapName;
+    else
+         whichMap =[];
     end
     
     whereMap = sprintf('%s/freesurfer/%s',derivDir,whichMap); % find the colormap   
