@@ -19,7 +19,7 @@ switch(projectName)
     case 'FSTLoc'
         addpath(genpath(fullfile(githubDir, 'GLMdenoise'))); % https://github.com/cvnlab/GLMdenoise
         addpath(genpath(fullfile(githubDir, 'nsdcode'))); % https://github.com/cvnlab/nsdcode
-       addpath(genpath(fullfile(githubDir, 'vistasoft')));  
+         addpath(genpath(fullfile(githubDir, 'vistasoft')));  
 end
 
 % general toolboxes

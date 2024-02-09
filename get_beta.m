@@ -10,7 +10,14 @@ for iRun  = 1:numel(datafiles)
     X = [dsm{iRun} myNoise{iRun}];
     tmp = ((datafiles{iRun}./mean(datafiles{iRun},2))-1)*100;
     betas{iRun} = (pinv(X) * tmp')';
-    data{iRun} = (X(:,1:size(dsm{iRun},2)) * betas{iRun}(:,1:size(dsm{iRun},2))')';
 
+    data{iRun} = (X(:,1:size(dsm{iRun},2)) * betas{iRun}(:,1:size(dsm{iRun},2))')'; % y_hat from only design matrix no noise
+    %data{iRun} = tmp; % y%
+    %data{iRun} = (X * betas{iRun}')'; % y_hat
 
+    % % % Regress out the effect of myNoise from the data
+     % myNoiseEffect = (X(:,size(dsm{iRun},2)+1:end) * betas{iRun}(:,size(dsm{iRun},2)+1:end)')';
+     % data{iRun} = tmp - myNoiseEffect; % y - y_noise_hat
+     % 
+    %data{iRun} = myNoiseEffect; % just the noise
 end

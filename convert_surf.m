@@ -1,4 +1,4 @@
-function ff = convert_surf(fsdirFROM,fsdirTO,vals)
+function [ff,f1,f2] = convert_surf(fsdirFROM,fsdirTO,vals)
 
 interptype='nearest';
 sourcesuffix='';

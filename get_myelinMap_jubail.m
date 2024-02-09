@@ -5,15 +5,17 @@
 user = 'pw1246'; % username for jubail
 hcpJubailDir = '/scratch/pw1246/MRI/HCP'; % hcp folder on jubail
 bidsDir = '/Users/pw1246/Documents/MRI/bigbids'; % bids dir
-subs = '0397';
+subs = '0426';
 subject = ['sub-' subs];  % which subject
 inputDir = sprintf('%s@jubail.abudhabi.nyu.edu:%s/%s/outputs/PostFreeSurfer/MNINonLinear/Native/ ',user,hcpJubailDir,subject);
+inputDir = '/Volumes/Vision/MRI/recon-bank/derivatives/HCP/sub-0426/outputs/PostFreeSurfer/MNINonLinear/Native/ ';
 outputDir = sprintf('%s/derivatives/myelinHCP/%s',bidsDir,subject); % myelin output local dir
+outputDir = '/Volumes/Vision/MRI/recon-bank/derivatives/tmpmyelin';
 if ~isfolder(outputDir), mkdir(outputDir); end
 
 % which myeline map
-for biasCorrect = 0:1
-    for smoothing = 0:1
+for biasCorrect = 0
+    for smoothing = 0
 
         % get file path for rsync
 
@@ -27,6 +29,7 @@ for biasCorrect = 0:1
 
         %% step 2 - resample hcp to fsnative
         fsDir = '/Users/pw1246/Documents/MRI/bigbids/derivatives/freesurfer';
+        fsDir = '/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer';
         bidsDir = '/Volumes/Vision/MRI/recon-bank';
         whichFolder = dir(fsDir);
         subFolders = whichFolder([whichFolder.isdir] & ~ismember({whichFolder.name}, {'.', '..'}));
@@ -36,7 +39,7 @@ for biasCorrect = 0:1
 
         hemi = {'L','R'};
 
-        resultsDir = sprintf('%s/derivatives/myelin/%s',bidsDir,subject); % myelin output local dir
+        resultsDir = sprintf('%s/derivatives/myelin1/%s',bidsDir,subject); % myelin output local dir
         if ~isfolder(resultsDir), mkdir(resultsDir); end
 
         for whichHemi = 1:length(hemi)

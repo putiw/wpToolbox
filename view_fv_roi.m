@@ -1,4 +1,4 @@
-function freeview_cmd = view_fv(whichSub, bidsDir, varargin)
+function freeview_cmd = view_fv_roi(whichSub, bidsDir, varargin)
 
 % view overlay ontop of inflated surface in freeview
 
@@ -126,18 +126,18 @@ for whichHemi = 1:numel(hemi)
         mstlabel = sprintf('%s/label/retinotopy_RE/%sh.pMST_REmanual.label', subjectDir,hemi{whichHemi});
         mtlabel = sprintf('%s/label/retinotopy_RE/%sh.pMT_REmanual.label', subjectDir,hemi{whichHemi});
 
-        cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=1:label=%s:label_outline=1:label_color=blue:label_opacity=1:label=%s:label_outline=1:label_color=green:label_opacity=1',cmd,inflated,overlayCmd,mtlabel,mstlabel,fstlabel);
+        cmd = sprintf('%s -f %s%s:label=%s:label_color=black:label_opacity=1:label=%s:label_color=blue:label_opacity=1:label=%s:label_color=green:label_opacity=1',cmd,inflated,overlayCmd,mtlabel,mstlabel,fstlabel);
 
 
     end
 
     % check if we have a camera saved
     mycam = fullfile(derivDir,'freesurfer',[hemi{whichHemi} 'h.camera.txt']);
-    if isfile(mycam)
-        mycam = fread(fopen(mycam, 'rt'), '*char')';
-        cmd = sprintf('%s %s',cmd, mycam);
-    else
-    end
+    % if isfile(mycam)
+    %     mycam = fread(fopen(mycam, 'rt'), '*char')';
+    %     cmd = sprintf('%s %s',cmd, mycam);
+    % else
+    % end
 
 
 

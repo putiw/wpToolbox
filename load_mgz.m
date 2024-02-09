@@ -1,22 +1,25 @@
-function native2avg(subject, bidsDir, varargin)
+function mgzval = load_mgz(whichSub, bidsDir, varargin)
 
-% this scripts takes mgz file name, subject ID, and bidsDir to convert
-% everything into fsaverage space. 
+% view overlay ontop of inflated surface in freeview
 
-% subject - e.g. 'sub-0248' - subject ID
-% bidsDir - e.g. '~/Documents/MRI/bids' - BIDS directory
-% hemi - e.g. - 'l' - optional, if not defined then we will plot both hemisphere
-% varargin - e.g. 'maps/motion' - 'subfolderName/mgzFileName' - look for matching files only in the defined subfolder within derivatives
+% whichSub - e.g. 'sub-0248' or '0248' or 'wlsubj124' - subject ID
+% bidsDir - e.g. '/Volumes/Vision/MRI/recon-bank' - BIDS directory
+% (hemi) - e.g. - 'l' - optional, if not defined then we will plot both hemisphere
+% varargin - e.g. 'maps/motion:rainbow' - 'subfolderName/mgzFileName:colorMapName' - look for matching files only in the defined subfolder within derivatives
+%          - e.g. 'motion:rainbow' - 'mgzFileName:colorMapName' - look for matching files across all subfolders in the derivatives directory
+%          - e.g. 'motion' - no colormap
+%          - e.g. 'prfvista_mov/ses-03/eccen' - 'subfolderName/session/mgzFileName'
+%          The only non-optional input is the mgz name, i.e. eccen
+%          The subfolder, session folder, and colormap are optional.
 
 % example usage:
-% subject = 'sub-0248'
-% bidsDir = '~/Documents/MRI/bids';
-% view_fv(subject, bidsDir, 'maps/motion', 'MyelinMap',);
-% % or
-% view_fv(subject, bidsDir, 'lh', 'mt+2', 'cw:rainbow','prfvista_mov/eccen');
+% whichSub = 'sub-0248'
+% bidsDir = '/Volumes/Vision/MRI/recon-bank';
+% view_fv(subject, bidsDir, 'lh', 'mt+2', 'motion_base/cw:rainbow','prfvista_mov/ses-03/eccen');
 
 derivDir = [bidsDir '/derivatives'];
 subject = [];
+
 %% check if BIDS derivatives directory exsits
 if ~exist(derivDir,'dir')
     error(['BIDS derivatives directory does not exist <' derivDir '>'])
@@ -80,39 +83,43 @@ else
     hemi = {'l','r'};
 end
 %% loop through each hemisphere
-tmpmgz0 = MRIread(fullfile(sprintf('%s/freesurfer/fsaverage',bidsDir), 'mri', 'orig.mgz'));
+mgzval = cell(numel(hemi),length(varargin));
 for whichHemi = 1:numel(hemi)
 
-    % loop through each overlay name provided in varargin
+    % find the inflated surface
+    inflated = sprintf('%s/surf/%sh.inflated',subjectDir,hemi{whichHemi});
+    % check if the inflated surf file exists
+    if ~exist(inflated,'file')
+        error(['<' hemi{whichHemi} 'h.inflate> not found in <' subjectDir '/surf>']);
+    end
 
+    % loop through each overlay name provided in varargin
     for whichOverlay = 1:length(varargin)
         % parse the input to get the folder, overlay, and colormap name
-        [folder, fileParts] = parse_input(varargin{whichOverlay},bidsDir,subject,hemi{whichHemi});
+        [folder, fileParts] = parse_input(varargin{whichOverlay},derivDir,subject,hemi{whichHemi});
         overlayName = fileParts{3};
         for whichFolder = 1:numel(folder)
-            % find fsnative mgz
             whereOverlay = sprintf('%s/%sh.%s.mgz', folder{whichFolder}, hemi{whichHemi}, overlayName);
-            % load fsnative mgz
-            tmp = MRIread(whereOverlay);
-            tmp = squeeze(tmp.vol);
-            % convert to fsaverage
-            tmp = cvntransfertosubject(subfolderName,'fsaverage', tmp, [hemi{whichHemi} 'h'], 'nearest', 'orig', 'orig');
-            % use an empty mgz to write the value to 
-            tmpmgz = tmpmgz0;
-            tmpmgz.vol = [];
-            tmpmgz.vol = tmp;
-            % find path to save the fsavg file
-            tmp = strsplit(folder{whichFolder},'/');
-            tmp(end) = []; % get rid of subject folder
-            tmp = [strjoin(tmp, '/') '/fsaverage'];
-            if ~isfolder(tmp) mkdir(tmp); end
-            filename = [hemi{whichHemi} 'h.' overlayName '.' subject{1} '.mgz'];
-            disp(['saving ' [hemi{whichHemi} 'h.' overlayName '.' subject{1} '.mgz ...']])
-            MRIwrite(tmpmgz, fullfile(tmp, filename));
+
+            if ~isfile(whereOverlay)
+                warning(['none of the overlay files are found for ' hemi{whichHemi} 'h hemi'])
+            else
+                tmp = MRIread(whereOverlay);
+                tmp = tmp.vol;
+                mgzval{whichHemi,whichOverlay} = tmp(:);
+            end
+
         end
     end
-    
+
+
+
+
+
 end
+
+mgzval = cell2mat(mgzval);
+
 
 end
 
@@ -149,19 +156,21 @@ function [folder, fileParts] = parse_input(whichFile,derivDir,subject,iHemi)
 end
 
 %% return all sub folders that contains wanted overlay mgz file
-function folder = find_my_files(whichSub,bidsDir,fileParts)
+function folder = find_my_files(subject,derivDir,fileParts)
 
-    subDirs = dir(fullfile(bidsDir, '*'));
+    subDirs = dir(fullfile(derivDir, '*'));
     
-    if strcmp(fileParts{1},'**')
+    if strcmp(fileParts{1},'**') % if mgz folder not specified we will look across all subfolders
         subDirs = subDirs([subDirs.isdir] & ~ismember({subDirs.name}, {'.', '..', 'derivatives','freesurfer'}));
-    else
+    else % if mgz folder is specified we will only check that folder for the mgz files
         subDirs = subDirs([subDirs.isdir] & ismember({subDirs.name}, {fileParts{1}}));
     end
 
     tmpFiles = [];
     for subDir = subDirs'
-        tmpFiles = [tmpFiles; dir(fullfile(derivDir, subDir.name, subject, fileParts{2}, [fileParts{5} 'h.' fileParts{3} '.mgz']))];
+
+            tmpFiles = [tmpFiles; dir(fullfile(derivDir, subDir.name, subject, fileParts{2}, [fileParts{5} 'h.' fileParts{3} '.mgz']))];
+        
     end
 
     folder = cell(numel(tmpFiles),1);
@@ -171,3 +180,4 @@ function folder = find_my_files(whichSub,bidsDir,fileParts)
         end
     end
 end
+

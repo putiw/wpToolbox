@@ -1,13 +1,13 @@
 %% jubail to BIDS or BIDS to jubail
 
 who2who = 2; % 1- bids to jubail 2- jubail to bids
-giveCommand = 1; % 1 - don't run it, just print out command
+giveCommand = 0; % 1 - don't run it, just print out command
 % set up path
 user = 'pw1246'; % username for jubail
 JubailDir = '/scratch/pw1246/MRI/bigbids'; % hcp folder on jubail bigbids CueIntegration2023
 bidsDir = '~/Documents/MRI/bigbids'; % bids dir
-subs = '0255';
-session = 'ses-01';
+subs = '0397';
+session = 'ses-02';
 subject = ['sub-' subs];  % which subject
 
 if who2who == 1
