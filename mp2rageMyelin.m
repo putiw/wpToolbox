@@ -3,7 +3,7 @@ clearvars;close all;clc;
 
 % Assume you have ran recon-all on regular T1w
 bidsDir = '/Volumes/Vision/MRI/recon-bank';
-subject = 'sub-0201';
+subject = 'sub-0426';
 
 whichFiles = {'T1w', 'UNIT1'}; % find where these two scans are 
 filePath = cell(2,2);
@@ -37,9 +37,9 @@ derivMRDir = sprintf('%s/derivatives/qMRLab/%s',bidsDir,subject);
 derivMyeDir = sprintf('%s/derivatives/T1MapMyelin/%s',bidsDir,subject);
 mkdir(derivMyeDir)
 % get files
-UNI = sprintf('%sUNIT1.nii',filePath{2,1}); 
+UNI = sprintf('%sUNIT1.nii.gz',filePath{2,1}); 
 R1map = sprintf('%s/R1.nii.gz',derivMRDir); 
-INV2 = sprintf('%sinv-2_MP2RAGE.nii',filePath{2,1}); 
+INV2 = sprintf('%sinv-2_MP2RAGE.nii.gz',filePath{2,1}); 
 UNI_out = sprintf('%spresurf_MPRAGEise/%sUNIT1_MPRAGEised.nii',filePath{2,2},filePath{2,3}); 
 stripmask = sprintf('%spresurf_INV2/%sinv-2_MP2RAGE_stripmask.nii',filePath{2,2},filePath{2,3});  
 R1mapBrain = sprintf('%s/R1MapBrain.nii.gz',derivMRDir); 
@@ -96,38 +96,38 @@ end
 % MRIwrite(tmp,[bidsDir '/derivatives/T1MapMyelin/' subject '/rh.myelin0.1_nocurv.mgz']);
 % %%
 % view_fv(subject,bidsDir,'rh','T1MapMyelin/myelin0.1','T1MapMyelin/myelin0.1_nocurv');
-%% Step 4 - if we ran recon-all on UNIT1
-% we do vol2surf and then surf2surf
-
-R1map = sprintf('%s/R1.nii.gz',derivMRDir); 
-subject = 'sub-0248';
-subjectUNI = 'sub-02481';
-outDir = [bidsDir '/derivatives/T1MapMyelin/' subject];
-mkdir(outDir);
-
-for whatFrac = 0.1
-cmd = sprintf('mri_vol2surf --src %s --hemi lh --out %s/lh.myelin%s.mgh --cortex --regheader %s --projfrac %s',R1map,outDir,num2str(whatFrac),subjectUNI,num2str(whatFrac));
-system(cmd)
-cmd = sprintf('mri_vol2surf --src %s --hemi rh --out %s/rh.myelin%s.mgh --cortex --regheader %s --projfrac %s',R1map,outDir,num2str(whatFrac),subjectUNI,num2str(whatFrac));
-system(cmd)
-
-lvals = MRIread(sprintf('%s/lh.myelin%s.mgh',outDir,num2str(whatFrac)));
-lvals = squeeze(lvals.vol)';
-rvals = MRIread(sprintf('%s/rh.myelin%s.mgh',outDir,num2str(whatFrac)));
-rvals = squeeze(rvals.vol)';
-vals = [lvals;rvals];
-fsdirFROM = [bidsDir '/derivatives/freesurfer/' subjectUNI];
-fsdirTO = [bidsDir '/derivatives/freesurfer/' subject];
-[~, f1, f2] = convert_surf(fsdirFROM,fsdirTO,vals);
-
-tmp = MRIread([bidsDir '/derivatives/myelin/' subject '/lh.MyelinMap.mgz']);
-tmp.vol = f1;
-MRIwrite(tmp,[outDir '/lh.vmyelin' num2str(whatFrac) '.mgz']);
-tmp = MRIread([bidsDir '/derivatives/myelin/' subject '/rh.MyelinMap.mgz']);
-tmp.vol = f2;
-MRIwrite(tmp,[outDir '/rh.vmyelin' num2str(whatFrac) '.mgz']);
-end
-
+% %% Step 4 - if we ran recon-all on UNIT1
+% % we do vol2surf and then surf2surf
+% 
+% R1map = sprintf('%s/R1.nii.gz',derivMRDir); 
+% subject = 'sub-0248';
+% subjectUNI = 'sub-02481';
+% outDir = [bidsDir '/derivatives/T1MapMyelin/' subject];
+% mkdir(outDir);
+% 
+% for whatFrac = 0.1
+% cmd = sprintf('mri_vol2surf --src %s --hemi lh --out %s/lh.myelin%s.mgh --cortex --regheader %s --projfrac %s',R1map,outDir,num2str(whatFrac),subjectUNI,num2str(whatFrac));
+% system(cmd)
+% cmd = sprintf('mri_vol2surf --src %s --hemi rh --out %s/rh.myelin%s.mgh --cortex --regheader %s --projfrac %s',R1map,outDir,num2str(whatFrac),subjectUNI,num2str(whatFrac));
+% system(cmd)
+% 
+% lvals = MRIread(sprintf('%s/lh.myelin%s.mgh',outDir,num2str(whatFrac)));
+% lvals = squeeze(lvals.vol)';
+% rvals = MRIread(sprintf('%s/rh.myelin%s.mgh',outDir,num2str(whatFrac)));
+% rvals = squeeze(rvals.vol)';
+% vals = [lvals;rvals];
+% fsdirFROM = [bidsDir '/derivatives/freesurfer/' subjectUNI];
+% fsdirTO = [bidsDir '/derivatives/freesurfer/' subject];
+% [~, f1, f2] = convert_surf(fsdirFROM,fsdirTO,vals);
+% 
+% tmp = MRIread([bidsDir '/derivatives/myelin/' subject '/lh.MyelinMap.mgz']);
+% tmp.vol = f1;
+% MRIwrite(tmp,[outDir '/lh.vmyelin' num2str(whatFrac) '.mgz']);
+% tmp = MRIread([bidsDir '/derivatives/myelin/' subject '/rh.MyelinMap.mgz']);
+% tmp.vol = f2;
+% MRIwrite(tmp,[outDir '/rh.vmyelin' num2str(whatFrac) '.mgz']);
+% end
+% 
 
  %%
 view_fv(subject,bidsDir,'mt+2','T1MapMyelin/myelin0.1');
@@ -136,7 +136,7 @@ view_fv(subject,bidsDir,'mt+2','T1MapMyelin/myelin0.1');
 % view_fv(subject,'/Volumes/Vision/MRI/recon-bank','mt+2','T1MapMyelin/myelin0.05','T1MapMyelin/myelin0.1','T1MapMyelin/myelin0.15','T1MapMyelin/myelin0.2','T1MapMyelin/myelin0.25','T1MapMyelin/myelin0.75');
 % view_fv(subject,'/Volumes/Vision/MRI/recon-bank','T1MapMyelin/myelin0.1','T1MapMyelin/myelin0.3');
 % %%
-view_fv(subject,'/Volumes/Vision/MRI/recon-bank','mt+2','cd2','T1MapMyelin/myelin0.1','T1MapMyelin/vmyelin0.1')
+%view_fv(subject,'/Volumes/Vision/MRI/recon-bank','mt+2','cd2','T1MapMyelin/myelin0.1','T1MapMyelin/vmyelin0.1')
 % 
 % h=view_fv(subject,'/Volumes/Vision/MRI/recon-bank','l','mt+2')
 % 

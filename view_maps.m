@@ -1,8 +1,20 @@
 %% define path
 clearvars; clc; close all;
-subject = 'sub-0250';
+subject = 'sub-0392';
 bidsDir = '/Volumes/Vision/MRI/recon-bank';
-view_fv_roi(subject,bidsDir,'T1MapMyelin/myelin0.5')
+view_fv(subject,bidsDir,'T1MapMyelin/myelin0.1','oppo3');
+%%
+%view_fv(subject,bidsDir,'loc_old/motioncenter','loc_old/motionright','loc_old/motionleft');
+view_fv(subject,bidsDir,'mt+2','cd/cd','T1MapMyelin/myelin0.5');
+%view_fv(subject,bidsDir,'l','mt+2','cd/cd','oppo3','T1MapMyelin/myelin0.5');
+
+%%
+%%
+view_fv(subject,bidsDir,'mt+2')
+view_fv(subject,bidsDir,'mt+2','cd','oppo3','prfvista_mov/vexpl','prfvista_mov/eccen','prfvista_mov/angle_adj','prfvista_mov/sigma','T1MapMyelin/myelin0.1');
+
+%%
+% view_fv_roi(subject,bidsDir,'mt+2','cd')
 % view_fv(subject,bidsDir,'l','hand','mt+2');
 view_fv(subject,bidsDir,'l','mstl','lower','upper','mt+2','prfvista_mov/eccen');
 view_fv(subject,bidsDir,'r','mstr','lower','upper','mt+2','prfvista_mov/eccen');

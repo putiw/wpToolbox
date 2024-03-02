@@ -88,7 +88,7 @@ for whichHemi = 1:numel(hemi)
     % find the inflated surface
     inflated = sprintf('%s/surf/%sh.inflated',subjectDir,hemi{whichHemi});
     %inflated = sprintf('%s/surf/%sh.sphere',subjectDir,hemi{whichHemi});
-    inflated = sprintf('%s/surf/%sh.white',subjectDir,hemi{whichHemi});
+    %inflated = sprintf('%s/surf/%sh.white',subjectDir,hemi{whichHemi});
     %inflated = sprintf('%s/surf/%sh.midthickness',subjectDir,hemi{whichHemi});
 
     % check if the inflated surf file exists
@@ -125,13 +125,14 @@ for whichHemi = 1:numel(hemi)
         fstlabel = sprintf('%s/label/0localizer/%sh.FST.label', subjectDir,hemi{whichHemi});
         mstlabel = sprintf('%s/label/retinotopy_RE/%sh.pMST_REmanual.label', subjectDir,hemi{whichHemi});
         mtlabel = sprintf('%s/label/retinotopy_RE/%sh.pMT_REmanual.label', subjectDir,hemi{whichHemi});
+        mtlabel = sprintf('%s/label/0localizer/%sh.func2D.label', subjectDir,hemi{whichHemi});
 
-        cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=1:label=%s:label_outline=1:label_color=blue:label_opacity=1:label=%s:label_outline=1:label_color=green:label_opacity=1',cmd,inflated,overlayCmd,mtlabel,mstlabel,fstlabel);
+        cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=1:label=%s:label_outline=1:label_color=blue:label_opacity=1:label=%s:label_outline=1:label_color=magenta:label_opacity=1',cmd,inflated,overlayCmd,mtlabel,mstlabel,fstlabel);
 
 
     end
 
-    % check if we have a camera saved
+    % % check if we have a camera saved
     mycam = fullfile(derivDir,'freesurfer',[hemi{whichHemi} 'h.camera.txt']);
     if isfile(mycam)
         mycam = fread(fopen(mycam, 'rt'), '*char')';
@@ -218,6 +219,8 @@ elseif contains(lower(overlayName),'myelin')
     whichMap=[];
 elseif contains(overlayName,'angle_adj')
     whichMap  = ['angle_corr_' iHemi 'h_color_scale'];
+elseif contains(lower(overlayName),'cdratio1')
+    whichMap = 'cddiff';
 
 
 elseif ismember(overlayName,{'mt+1','mt+2','mt+12','bio1','cw','ccw','cwccw','in','out','inout','upper','lower'})

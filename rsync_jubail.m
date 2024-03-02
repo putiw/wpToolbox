@@ -6,8 +6,8 @@ giveCommand = 0; % 1 - don't run it, just print out command
 user = 'pw1246'; % username for jubail
 JubailDir = '/scratch/pw1246/MRI/bigbids'; % hcp folder on jubail bigbids CueIntegration2023
 bidsDir = '~/Documents/MRI/bigbids'; % bids dir
-subs = '0397';
-session = 'ses-02';
+subs = '0395';
+session = 'ses-01';
 subject = ['sub-' subs];  % which subject
 
 if who2who == 1
