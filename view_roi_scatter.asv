@@ -10,20 +10,22 @@ fsDir = '/Applications/freesurfer/7.4.1';
 addpath(genpath(fullfile(githubDir, 'wpToolbox')));
 setup_user(projectName,serverDir,githubDir,fsDir);
 
-subject = 'sub-0426';
-roi = get_my_roi(subject,serverDir);
+subject = 'sub-0255';
 roisl = niftiread(['/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer/' subject '/label/0localizer/lh.rois_vol.nii.gz']);
 roisr = niftiread(['/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer/' subject '/label/0localizer/rh.rois_vol.nii.gz']);
 rois = roisl+roisr;
-t1 = niftiread(['/Volumes/Vision/MRI/recon-bank/rawdata/' subject '/ses-01/anat/' subject '_ses-01_T1w.nii.gz']);
-niiPath = ['/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer/' subject '/mri/registered_filled_to_T1w.nii.gz'];
+niiPath = ['/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer/' subject '/mri/registered_brainmask_to_T1w.nii.gz'];
 if isfile(niiPath)
 else
 tmpconvert
 end
-%%
+
+%% roi
+roi2d = read_ROIlabel(fullfile(serverDir,'/derivatives/freesurfer', subject,'label/0localizer/lh.func2D.label'));
+fst = read_ROIlabel(fullfile(serverDir,'/derivatives/freesurfer', subject,'label/0localizer/lh.fst.label'));
 
 vol = niftiread(niiPath);
+vol = vol>=1;
 
 % Assuming 'rois' variable is already loaded with your ROI data
 
@@ -34,16 +36,15 @@ voxelSize = 0.8;
 fig = figure;
 hold on;
 daspect([1 1 1]); % Keep the aspect ratio 1:1:1 to reflect real dimensions
-colormap('gray'); % Use grayscale for the T1 slice
 
 % Plot the registered filled volume (e.g., brain) with transparency
 [x, y, z] = meshgrid(1:size(vol,2), 1:size(vol,1), 1:size(vol,3));
 [f, v] =isosurface(x * voxelSize, y * voxelSize, z * voxelSize, vol, 0.5);
 p = patch('Faces',f,'Vertices',v);
 %p = patch(isosurface(x * voxelSize, y * voxelSize, z * voxelSize, vol, 0.5));
-p.FaceColor = 'white';
+p.FaceColor = [1 1 1]* 0.9;
 p.EdgeColor = 'none';
-p.FaceAlpha = 0.01; % Adjust transparency here
+p.FaceAlpha = 0.1; % Adjust transparency here
 
 
 % ROIs Visualization
@@ -56,9 +57,9 @@ p2 = patch(isosurface(x * voxelSize, y * voxelSize, z * voxelSize, rois == 2, 0.
 set(p2, 'FaceColor', 'red', 'EdgeColor', 'none', 'FaceAlpha', 1);
 
 % Adjust view, lighting, and axis
-view(3); % 3D view
+%view(3); % 3D view
 axis tight; % Fit the axis
-lighting gouraud; % Smooth shading
+% lighting gouraud; % Smooth shading
 xlabel('X (mm)');
 ylabel('Y (mm)');
 zlabel('Z (mm)');
@@ -67,65 +68,67 @@ zlabel('Z (mm)');
 xlim([0 size(vol,2) * voxelSize]);
 ylim([0 size(vol,1) * voxelSize]);
 zlim([0 size(vol,3) * voxelSize]);
-
+view(90, 45)
+view(-20, 0)
 
 axis off; % Hide axis for better visualization
-
+%camlight headlight; % Adds a light in front of the camera
+camlight left; % Adds another light to the left
+material dull; %
 % Enhance plot with a light object and material properties for aesthetics
-%light; lighting phong; material dull;
-set(fig, 'Color', 'black', 'Position', [100, 100, 640*2, 480*2]); % Adjust position and size as needed
-
-% Optional: Set the figure background color to none for transparency
+% light; lighting phong; material shiny;
+set(fig, 'Color', 'white', 'Position', [100, 100, 640*2, 480*2]); % Adjust position and size as needed
+%ylim([120 150])
 %%
-
-
-filename = ['/Users/pw1246/Desktop/' subject '.gif'];
-
-% Loop to animate the view and save each frame to the GIF
-for ii = [1:10, 10:-1:2]
-    az = 10 + ii*5; % azimuth
-    el = 20; % elevation
-    view(az, el); % Set the camera view
-    drawnow; % Force MATLAB to render the figure window now
-    
-    % Capture the frame
-    frame = getframe(fig);
-    im = frame2im(frame);
-    [imind, cm] = rgb2ind(im, 256);
-
-    % Write to the GIF File 
-    if ii == 1
-        imwrite(imind, cm, filename, 'gif', 'Loopcount', inf,'DelayTime',0.15);
-    else
-        imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append','DelayTime',0.15);
-    end
-    pause(0.1)
-    
-end
-
-hold off;
-%%
-% Read the GIF file
-[img, map] = imread(filename, 'Frames', 'all');
-
-% Define the crop rectangle [X, Y, Width, Height]
-% Adjusted to MATLAB's indexing (subtract 1 from width and height)
-cropRect = [700,400,1000,700]; 
-
-% Preparing to overwrite or save to a new file
-newFilename = filename; % Overwrite the original file
-
-% Process and save each frame
-for ii = 1:size(img, 4)
-    % Crop the current frame (for indexed images)
-    croppedImg = imcrop(img(:,:,1,ii), cropRect);
-    
-    % Write the cropped frame to the GIF file
-    if ii == 1
-        imwrite(croppedImg, map, newFilename, 'gif', 'Loopcount', inf, 'DelayTime', 0.2);
-    else
-        imwrite(croppedImg, map, newFilename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.2);
-    end
-end
-%%
- 
+% 
+% 
+% filename = ['/Users/pw1246/Desktop/' subject '.gif'];
+% 
+% % Loop to animate the view and save each frame to the GIF
+% for ii = [1:10, 10:-1:2]
+%     az = 10 + ii*5; % azimuth
+%     el = 20; % elevation
+%     view(az, el); % Set the camera view
+%     drawnow; % Force MATLAB to render the figure window now
+% 
+%     % Capture the frame
+%     frame = getframe(fig);
+%     im = frame2im(frame);
+%     [imind, cm] = rgb2ind(im, 256);
+% 
+%     % Write to the GIF File 
+%     if ii == 1
+%         imwrite(imind, cm, filename, 'gif', 'Loopcount', inf,'DelayTime',0.15);
+%     else
+%         imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append','DelayTime',0.15);
+%     end
+%     pause(0.1)
+% 
+% end
+% 
+% hold off;
+% %%
+% % Read the GIF file
+% [img, map] = imread(filename, 'Frames', 'all');
+% 
+% % Define the crop rectangle [X, Y, Width, Height]
+% % Adjusted to MATLAB's indexing (subtract 1 from width and height)
+% cropRect = [700,400,1000,700]; 
+% 
+% % Preparing to overwrite or save to a new file
+% newFilename = filename; % Overwrite the original file
+% 
+% % Process and save each frame
+% for ii = 1:size(img, 4)
+%     % Crop the current frame (for indexed images)
+%     croppedImg = imcrop(img(:,:,1,ii), cropRect);
+% 
+%     % Write the cropped frame to the GIF file
+%     if ii == 1
+%         imwrite(croppedImg, map, newFilename, 'gif', 'Loopcount', inf, 'DelayTime', 0.2);
+%     else
+%         imwrite(croppedImg, map, newFilename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.2);
+%     end
+% end
+% %%
+% 

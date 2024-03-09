@@ -3,7 +3,7 @@ clearvars;close all;clc;
 
 % Assume you have ran recon-all on regular T1w
 bidsDir = '/Volumes/Vision/MRI/recon-bank';
-subject = 'sub-0426';
+subject = 'sub-0037';
 
 whichFiles = {'T1w', 'UNIT1'}; % find where these two scans are 
 filePath = cell(2,2);
@@ -74,11 +74,11 @@ system(sprintf('mri_convert %s.mgz %s.nii.gz',refT1w, refT1w));
 system(sprintf('%sflirt -in %s -ref %s.nii.gz -out %s',fslbinDir, R1mapBrain, refT1w, R1mapT1w));
 
 %% vol to surf - fsnative 
-for whatFrac = 0.1;
+for whatFrac = 0.5;
 % vol2surf T1 map to fsnative --projfrac-avg 0 1 %s --projfrac-avg 0.1 0.8
 % --projfrac 0.5 
-system(sprintf('mri_vol2surf --src %s --hemi lh --out %s/lh.myelin%s.mgz --regheader %s --cortex --projfrac-avg 0 1 %s',R1mapT1w,derivMyeDir,num2str(whatFrac),subject,num2str(whatFrac)));
-system(sprintf('mri_vol2surf --src %s --hemi rh --out %s/rh.myelin%s.mgz --regheader %s --cortex  --projfrac-avg 0 1 %s',R1mapT1w,derivMyeDir,num2str(whatFrac),subject,num2str(whatFrac)));
+system(sprintf('mri_vol2surf --src %s --hemi lh --out %s/lh.myelin%s.mgz --regheader %s --cortex --projfrac %s',R1mapT1w,derivMyeDir,num2str(whatFrac),subject,num2str(whatFrac)));
+system(sprintf('mri_vol2surf --src %s --hemi rh --out %s/rh.myelin%s.mgz --regheader %s --cortex --projfrac %s',R1mapT1w,derivMyeDir,num2str(whatFrac),subject,num2str(whatFrac)));
 end
 %h=view_fv(subject,bidsDir,'rh','T1MapMyelin/myelin0.1','T1MapMyelin/myelin0.5');
 %% regress out curvature?

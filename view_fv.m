@@ -87,7 +87,7 @@ for whichHemi = 1:numel(hemi)
 
     % find the inflated surface
     inflated = sprintf('%s/surf/%sh.inflated',subjectDir,hemi{whichHemi});
-    %inflated = sprintf('%s/surf/%sh.sphere',subjectDir,hemi{whichHemi});
+    inflated = sprintf('%s/surf/%sh.sphere',subjectDir,hemi{whichHemi});
     %inflated = sprintf('%s/surf/%sh.white',subjectDir,hemi{whichHemi});
     %inflated = sprintf('%s/surf/%sh.midthickness',subjectDir,hemi{whichHemi});
 
@@ -122,13 +122,17 @@ for whichHemi = 1:numel(hemi)
 
     else
 
+        % fstlabel = sprintf('%s/label/0localizer/%sh.FST.label', subjectDir,hemi{whichHemi});
+        % mstlabel = sprintf('%s/label/retinotopy_RE/%sh.pMST_REmanual.label', subjectDir,hemi{whichHemi});
+        % mtlabel = sprintf('%s/label/retinotopy_RE/%sh.pMT_REmanual.label', subjectDir,hemi{whichHemi});
+        % mtlabel = sprintf('%s/label/0localizer/%sh.func2D.label', subjectDir,hemi{whichHemi});
+        % 
+        % cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=1:label=%s:label_outline=1:label_color=blue:label_opacity=1:label=%s:label_outline=1:label_color=magenta:label_opacity=1',cmd,inflated,overlayCmd,mtlabel,mstlabel,fstlabel);
+
         fstlabel = sprintf('%s/label/0localizer/%sh.FST.label', subjectDir,hemi{whichHemi});
-        mstlabel = sprintf('%s/label/retinotopy_RE/%sh.pMST_REmanual.label', subjectDir,hemi{whichHemi});
-        mtlabel = sprintf('%s/label/retinotopy_RE/%sh.pMT_REmanual.label', subjectDir,hemi{whichHemi});
         mtlabel = sprintf('%s/label/0localizer/%sh.func2D.label', subjectDir,hemi{whichHemi});
 
-        cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=1:label=%s:label_outline=1:label_color=blue:label_opacity=1:label=%s:label_outline=1:label_color=magenta:label_opacity=1',cmd,inflated,overlayCmd,mtlabel,mstlabel,fstlabel);
-
+        cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=blue:label_opacity=1:label=%s:label_outline=1:label_color=red:label_opacity=1',cmd,inflated,overlayCmd,mtlabel,fstlabel);
 
     end
 
