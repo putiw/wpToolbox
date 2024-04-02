@@ -87,7 +87,7 @@ for whichHemi = 1:numel(hemi)
 
     % find the inflated surface
     inflated = sprintf('%s/surf/%sh.inflated',subjectDir,hemi{whichHemi});
-    inflated = sprintf('%s/surf/%sh.sphere',subjectDir,hemi{whichHemi});
+    %inflated = sprintf('%s/surf/%sh.sphere',subjectDir,hemi{whichHemi});
     %inflated = sprintf('%s/surf/%sh.white',subjectDir,hemi{whichHemi});
     %inflated = sprintf('%s/surf/%sh.midthickness',subjectDir,hemi{whichHemi});
 

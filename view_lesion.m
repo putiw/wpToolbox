@@ -1,14 +1,17 @@
 %%
 bidsDir = '/Volumes/Vision/UsersShare/Amna/Multiple_Sclerosis';
-subject = 'sub-001';
+subject = 'sub-003';
 whichScan = 'Output_2D';
 segDir = 'output_segmentation';
 timepoint1 = 'tp001';
 timepoint2 = 'tp002';
 %vol = permute(vol1, [2 3 1]);
-t2tp1 = dir(sprintf('%s/%s/%s/*/%s/%s/mode02_bias_corrected.nii.gz',bidsDir,subject,whichScan,segDir,timepoint1));
+t2tp1 = dir(sprintf('%s/%s/%s/*/%s/%s/tp001_mode02_bias_corrected.nii.gz',bidsDir,subject,whichScan,segDir,timepoint1));
+info1 = niftiinfo(fullfile(t2tp1.folder,t2tp1.name));
 t2tp1 = niftiread(fullfile(t2tp1.folder,t2tp1.name));
-t2tp2 = dir(sprintf('%s/%s/%s/*/%s/%s/mode02_bias_corrected.nii.gz',bidsDir,subject,whichScan,segDir,timepoint2));
+t2tp1 = flip(t2tp1,2);t2tp1 = flip(t2tp1,3);
+t2tp2 = dir(sprintf('%s/%s/%s/*/%s/%s/tp002_mode02_bias_corrected.nii.gz',bidsDir,subject,whichScan,segDir,timepoint2));
+info2 = niftiinfo(fullfile(t2tp2.folder,t2tp2.name));
 t2tp2 = niftiread(fullfile(t2tp2.folder,t2tp2.name));
 
 t2tp2 = flip(t2tp2,2);t2tp2 = flip(t2tp2,3);
@@ -23,88 +26,196 @@ app.Lesion2 = niftiread(fullfile(les2.folder,les2.name));
 app.Les2Img = flip(app.Lesion2,2);app.Les2Img = flip(app.Les2Img,3);
 
 %% debugging for new lesion index
-% Label and calculate lesion volumes
-[app.L1, ~] = bwlabeln(app.Lesion1 > 0.8,26);
-[app.L2, ~] = bwlabeln(app.Lesion2 > 0.8,26);
+        % Label the lesions in each time point image using a binary threshold of 0.8
+        [app.L1, ~] = bwlabeln(app.Lesion1 > 0.8, 26);
+        [app.L2, ~] = bwlabeln(app.Lesion2 > 0.8, 26);
 
-lesion1index = nonzeros(unique(app.L1));
-lesion2index = nonzeros(unique(app.L2));
-lesion1indexNew = zeros(size(lesion1index));
-lesion2indexNew = zeros(size(lesion2index));
+        % Initialize arrays to store new indices for matched lesions across time points
+        lesion1index = nonzeros(unique(app.L1));
+        lesion2index = nonzeros(unique(app.L2));
+        lesion1indexNew = zeros(size(lesion1index));
+        lesion2indexNew = zeros(size(lesion2index));
 
-disp(['Matching lesions across two time points ...'])
+        disp(['Matching lesions across two time points ...']);
 
-for i1 = 1:numel(lesion1index)
-    disp([num2str(round(i1/numel(lesion1index)*100)) ' % done ...'])
-    for i2 = 1:numel(lesion2index)
-        match =  (app.L1==i1) & (app.L2==i2);
-        if sum(match(:))>0
-            if lesion2indexNew(i2) == 0 % if empty then sign new index
-                lesion2indexNew(i2) = i1;
-            else % if not empty it means more than one lesions in time1 has merged into same lesion in time 2
-                % we set the lesion in time 1 same index with the other
-                % lesion in time 1 that were merged
-                lesion1indexNew(i1) = lesion2indexNew(i2);
+        % Loop through each lesion index in time point 1 and match with lesions in time point 2
+        % this is stupid
+        for i1 = 1:numel(lesion1index)
+            disp([num2str(round(i1 / numel(lesion1index) * 100)), ' % done ...']);
+            for i2 = 1:numel(lesion2index)
+                % Check if lesions overlap between time points
+                match = (app.L1 == i1) & (app.L2 == i2);
+                if sum(match(:)) > 0
+                    % Assign matching lesions the same new index
+                    if lesion2indexNew(i2) == 0
+                        lesion2indexNew(i2) = i1;
+                    else
+                        % Handle merged lesions by assigning them the index of the merging lesion
+                        lesion1indexNew(i1) = lesion2indexNew(i2);
+                    end
+                end
             end
         end
-    end
-end
 
-disp('Sorting lesions by size ...')
+        lesion1indexNew(lesion1indexNew==0) = lesion1index(lesion1indexNew==0);
+        lesion2indexNew(lesion2indexNew==0) = max(lesion1index)+1:max(lesion1index)+sum(lesion2indexNew==0);
 
-lesion1indexNew(lesion1indexNew==0) = lesion1index(lesion1indexNew==0);
-lesion2indexNew(lesion2indexNew==0) = max(lesion1index)+1:max(lesion1index)+sum(lesion2indexNew==0);
+        valueToIndex = containers.Map(unique([lesion1indexNew;lesion2indexNew]), 1:numel(unique([lesion1indexNew;lesion2indexNew])));
+        lesion1indexNew = arrayfun(@(x) valueToIndex(x),lesion1indexNew);
+        lesion2indexNew = arrayfun(@(x) valueToIndex(x),lesion2indexNew);
 
+        [~, loc] = ismember(app.L1, lesion1index);
+        loc(loc > 0) = lesion1indexNew(loc(loc > 0));
+        app.L1(loc > 0) = loc(loc > 0);
+        [~, loc] = ismember(app.L2, lesion2index);
+        loc(loc > 0) = lesion2indexNew(loc(loc > 0));
+        app.L2(loc > 0) = loc(loc > 0);
 
-[~, loc] = ismember(app.L1, lesion1index);
-loc(loc > 0) = lesion1indexNew(loc(loc > 0));
-app.L1(loc > 0) = loc(loc > 0);
-[~, loc] = ismember(app.L2, lesion2index);
-loc(loc > 0) = lesion2indexNew(loc(loc > 0));
-app.L2(loc > 0) = loc(loc > 0);
+        disp('Sorting lesions by size ...')
+        newlist = unique([lesion1indexNew; lesion2indexNew]);
+        lesionVol = zeros(nnz(newlist), 1);
+        for ii = 1:nnz(newlist)
+            lesionVol(ii) = max([nnz(app.L1 == ii) nnz(app.L2 == ii)]); % Number of voxels in the ith lesion
+        end
 
+        [~,newlistOrder] = sort(lesionVol,'descend');
 
-newlist = unique([lesion1indexNew; lesion2indexNew]);
-lesionVol = zeros(nnz(newlist), 1);
-for ii = 1:nnz(newlist)
-    lesionVol(ii) = max([nnz(app.L1 == ii) nnz(app.L2 == ii)]); % Number of voxels in the ith lesion
-end
+        [~, loc] = ismember(app.L1, newlistOrder);
+        loc(loc > 0) = newlist(loc(loc > 0));
+        app.L1(loc > 0) = loc(loc > 0);
 
-[~,newlistOrder] = sort(lesionVol,'descend');
+        [~, loc] = ismember(app.L2, newlistOrder);
+        loc(loc > 0) = newlist(loc(loc > 0));
+        app.L2(loc > 0) = loc(loc > 0);
 
-[~, loc] = ismember(app.L1, newlistOrder);
-loc(loc > 0) = newlist(loc(loc > 0));
-app.L1(loc > 0) = loc(loc > 0);
+        % remove any lesion size less than xxx
+        app.L1(ismember(app.L1, find(sort(lesionVol,'descend')<10))) = 0;
+        app.L2(ismember(app.L2, find(sort(lesionVol,'descend')<10))) = 0;
 
-[~, loc] = ismember(app.L2, newlistOrder);
-loc(loc > 0) = newlist(loc(loc > 0));
-app.L2(loc > 0) = loc(loc > 0);
+        disp('Calculating lesion centers ...')
 
-% remove any lesion size less than xxx
-app.L1(ismember(app.L1, find(sort(lesionVol,'descend')<1))) = 0;
-app.L2(ismember(app.L2, find(sort(lesionVol,'descend')<1))) = 0;
+        % Calculate the center of each lesion for visualization
+        app.lesionIndex = nonzeros(unique([app.L1; app.L2])); % Combined list of unique lesion indices
+        app.lesionCenter = zeros(numel(app.lesionIndex), 3);
+        % Note: Image orientation adjustments might be necessary for correct visualization
+        tmpL1 = flip(app.L1, 2);
+        tmpL1 = flip(tmpL1, 3);
+        tmpL2 = flip(app.L2, 2);
+        tmpL2 = flip(tmpL2, 3);
 
-disp('Calculating lesion centers ...')
+        % Initialize the matrix to store size changes across two time points
+        app.sizeChange = zeros(numel(app.lesionIndex), 3);
 
-app.lesionIndex = nonzeros(unique([app.L1; app.L2]));
-app.lesionCenter = zeros(numel(app.lesionIndex),3);
+        for ii = 1:numel(app.lesionIndex)
+            % Generate binary matrices for each lesion by comparing with their indices
+            binaryMat = tmpL1 == app.lesionIndex(ii);
+            % Count the number of true values (lesion volume) in time point 1
+            app.sizeChange(ii, 1) = sum(binaryMat(:));
+            % Repeat for time point 2
+            tmp2 = tmpL2 == app.lesionIndex(ii);
+            app.sizeChange(ii, 2) = sum(tmp2(:));
+            % If a lesion is not present in time point 1, use its presence in time point 2
+            if sum(binaryMat(:)) < 1
+                binaryMat = tmp2;
+            end
+            % Calculate the centroid of the lesion by finding the index of maximum sum along each dimension
+            [~, app.lesionCenter(app.lesionIndex(ii), 1)] = max(squeeze(sum(sum(binaryMat, 2), 3)));
+            [~, app.lesionCenter(app.lesionIndex(ii), 2)] = max(squeeze(sum(sum(binaryMat, 1), 3)));
+            [~, app.lesionCenter(app.lesionIndex(ii), 3)] = max(squeeze(sum(sum(binaryMat, 1), 2)));
+        end
+        % Calculate the change in lesion size between two time points and convert to volume
+        app.sizeChange(:, 3) = (app.sizeChange(:, 2) - app.sizeChange(:, 1)) * app.voxelSize;
 
-% orientation in imshow and patch are not the same
-tmpL1 = flip(app.L1,2);
-tmpL1 = flip(tmpL1,3);
-tmpL2 = flip(app.L2,2);
-tmpL2 = flip(tmpL2,3);
+        % Set the limits and enable the lesion index spinner based on available lesions
+        app.LesionIndexSpinner.Limits = [1, size(app.lesionCenter, 1)];
+        app.LesionIndexSpinner.Enable = 'on';
 
-for ii = 1:numel(app.lesionIndex)
-    binaryMat = tmpL1 == app.lesionIndex(ii); % Example binary matrix
-    if sum(binaryMat(:)) < 1
-        binaryMat = tmpL2 == app.lesionIndex(ii);
-    end
-    % Find the index of the maximum sum for each dimension
-    [~, app.lesionCenter(app.lesionIndex(ii),1)] = max(squeeze(sum(sum(binaryMat, 2), 3)));
-    [~, app.lesionCenter(app.lesionIndex(ii),2)] = max(squeeze(sum(sum(binaryMat, 1), 3)));
-    [~, app.lesionCenter(app.lesionIndex(ii),3)] = max(squeeze(sum(sum(binaryMat, 1), 2)));
-end
+        % Initialize the review states for each lesion across both time points as "keep"
+        app.LesionReviewStates = repmat("keep", numel(app.lesionIndex), 2);
+
+        % Prepare clean and draft lesion matrices for both time points
+        app.Lesion1Clean = app.L1;
+        app.Lesion1Draft = zeros(size(app.L1));
+        app.Lesion2Clean = app.L2;
+        app.Lesion2Draft = zeros(size(app.L2));
+
+        % Display summary information about lesions in TextArea
+        infoText = sprintf('Time 1 - %d lesions (%d ml)\nTime 2 - %d lesions (%d ml)', ...
+            nnz(unique(app.L1)), round(nnz(app.L1(:)) * app.voxelSize), ...
+            nnz(unique(app.L2)), round(nnz(app.L2(:)) * app.voxelSize));
+        app.TextArea.Value = infoText;
+
+        % Make the save GIF and export button visible and enabled
+        app.savegifButton.Visible = true;
+        app.savegifButton.Enable = 'on';
+        app.ExportButton.Visible = true;
+        app.ExportButton.Enable = 'on';
+
+        % Identify new lesions in time point 2 that were not present in time point 1
+        lesionList2 = unique(app.L2);
+        app.newLesionIndex = lesionList2(~ismember(unique(app.L2), unique(app.L1)));
+
+        %%
+
+        %%
+app.whichLes = app.Les1Img;
+app.whichT2 = t2tp1;
+        app.x0.Value = app.lesionCenter(1,1);
+      app.y0.Value = app.lesionCenter(1,2);
+      app.z0.Value = app.lesionCenter(1,3);
+
+        img21 = mat2gray(squeeze(app.whichT2(app.x0.Value,:,:)))'; % sagittal
+        img22 = mat2gray(squeeze(app.whichT2(:,app.y0.Value,:)))'; % coronal
+        img23 = mat2gray(squeeze(app.whichT2(:,:,app.z0.Value))); % axial
+
+        % Combine them horizontally
+        botrow = [img21 img22 img23];
+
+        % Calculate padding because the images are wider than a square
+        padding = (size(botrow,2) - size(botrow,1)*3) / 2;
+
+        % Extract and resize the zoomed-in images for the top row
+        % sagittal view is bounded by y/z
+        % coronal view is bounded by x/z
+        % axial view is bounded by x/y
+
+        img11 = imresize(img21(max(1, app.z0.Value - app.sizeZoom):min(end, app.z0.Value + app.sizeZoom), max(1, app.y0.Value - app.sizeZoom):min(end, app.y0.Value + app.sizeZoom)), [size(botrow,1) size(botrow,1)]);
+        img12 = imresize(img22(max(1, app.z0.Value - app.sizeZoom):min(end, app.z0.Value + app.sizeZoom), max(1, app.x0.Value - app.sizeZoom):min(end, app.x0.Value + app.sizeZoom)), [size(botrow,1) size(botrow,1)]);
+        img13 = imresize(img23(max(1, app.x0.Value - app.sizeZoom):min(end, app.x0.Value + app.sizeZoom), max(1, app.y0.Value - app.sizeZoom):min(end, app.y0.Value + app.sizeZoom)), [size(botrow,1) size(botrow,1)]);
+
+        % Combine the top row images with padding
+        toprow = [zeros(size(botrow,1), floor(padding)-20), img11, zeros(size(botrow,1), 20), img12, zeros(size(botrow,1), 20), img13, zeros(size(botrow,1), ceil(padding)-20)];
+
+        % Combine top and bottom rows
+        img = [toprow; botrow];
+
+        % Display the combined image in UIAxes
+        imshow(img);
+        hold on
+
+        % Prepare lesion overlays
+        les21 = mat2gray(squeeze(app.whichLes(app.x0.Value,:,:)))';
+        les22 = mat2gray(squeeze(app.whichLes(:,app.y0.Value,:)))';
+        les23 = mat2gray(squeeze(app.whichLes(:,:,app.z0.Value)));
+
+        % Combine lesion overlays horizontally for the bottom row
+        botles = [les21 les22 les23];
+
+        % Resize and prepare lesion overlays for the top row
+        les11 = imresize(les21(app.z0.Value - app.sizeZoom:app.z0.Value + app.sizeZoom, app.y0.Value - app.sizeZoom:app.y0.Value + app.sizeZoom), [size(botrow,1) size(botrow,1)]);
+        les12 = imresize(les22(app.z0.Value - app.sizeZoom:app.z0.Value + app.sizeZoom, app.x0.Value - app.sizeZoom:app.x0.Value + app.sizeZoom), [size(botrow,1) size(botrow,1)]);
+        les13 = imresize(les23(app.x0.Value - app.sizeZoom:app.x0.Value + app.sizeZoom, app.y0.Value - app.sizeZoom:app.y0.Value + app.sizeZoom), [size(botrow,1) size(botrow,1)]);
+        toples = [zeros(size(botrow,1), padding-20) les11 zeros(size(botrow,1), 20) les12 zeros(size(botrow,1), 20) les13 zeros(size(botrow,1), padding-20)];
+
+        % Combine top and bottom lesion overlays
+        img1 = [toples; botles];
+
+        % Create an overlay for the lesion data
+        nanMask = img1 ~= 0; % Create a mask to apply the overlay only where lesions are present
+        tmpImg = ind2rgb(im2uint8(mat2gray(img1)), hot);
+        tmpImg(tmpImg>0&tmpImg<1) = 0;
+        app.hLes = imshow(tmpImg);
+        set(app.hLes, 'AlphaData',double(img1))
 
 %% check which lesion is new
 

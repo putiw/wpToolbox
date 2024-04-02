@@ -2,15 +2,16 @@ clearvars;close all;clc;
 
 subject = 'sub-ms01';
 
-bidsDir = '/Volumes/Vision/MRI/recon-bank';
+bidsDir = '/Users/pw1246/Desktop/ms/MsBIDS';
 
 whichHeader = {'StructName', 'NumVert', 'SurfArea', 'GrayVol', 'ThickAvg', 'ThickStd', 'MeanCurv', 'GausCurv', 'FoldInd', 'CurvInd'};
 hemi = {'l','r'};
 
-subjects = {'sub-0037','sub-0201','sub-0248','sub-0250','sub-0255','sub-0392','sub-0395','sub-0397','sub-0426'};
-
+subjects = dir(fullfile(bidsDir,'rawdata','sub*'));
+tic
 for whichSub = 1:numel(subjects)
-    subject = subjects{whichSub};
+
+    subject = subjects(whichSub).name;
 
     excelDir = sprintf('%s/derivatives/excel/%s',bidsDir,subject);
     mkdir(excelDir);

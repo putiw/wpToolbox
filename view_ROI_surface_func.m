@@ -10,7 +10,7 @@ fsDir = '/Applications/freesurfer/7.4.1';
 addpath(genpath(fullfile(githubDir, 'wpToolbox')));
 setup_user(projectName,serverDir,githubDir,fsDir);
 
-subject = 'sub-0395';
+subject = 'sub-0037';
 
 
 func2DLabelLeft = read_ROIlabel(fullfile(serverDir, 'derivatives/freesurfer', subject, 'label/0localizer/lh.func2D.label'));
@@ -23,43 +23,23 @@ fstLabelRight = read_ROIlabel(fullfile(serverDir, 'derivatives/freesurfer', subj
 lcurv = read_curv(fullfile(serverDir,'/derivatives/freesurfer', subject,'surf', 'lh.curv'));
 rcurv = read_curv(fullfile(serverDir,'/derivatives/freesurfer', subject,'surf', 'rh.curv'));
 curv = [lcurv;rcurv];
-%%
-% % Define the colormap data
-% colormapData = [ ...
-%     0, 255, 255; % RGB for val=0
-%     0, 129, 0;   % RGB for val=59.11439114391143
-%     255, 255, 0; % RGB for val=120
-%     122, 8, 10;  % RGB for val=180
-% ];
-% 
-% % Normalize the RGB values to [0, 1]
-% colormapData = colormapData / 255;
-% 
-% % Optionally, create a figure to show the colormap
-% figure;
-% colormap(colormapData);
-% colorbar;
 
 %%
-try
-   % vals = load_mgz(subject,serverDir,'T1MapMyelin/myelin0.5'); %'transparent/oppo3'
- %  vals = load_mgz(subject,serverDir,'motion_base/mt+2'); %'transparent/oppo3'
-      % vals = load_mgz(subject,serverDir,'cd/cd'); %'transparent/oppo3'
-       vals = load_mgz(subject,serverDir,'prfvista_mov/eccen'); %'transparent/oppo3'
-       vals = load_mgz(subject,serverDir,'prfvista_mov/vexpl'); %'transparent/oppo3'
 
-catch
-end
-if isempty(vals)
-    vals = load_mgz(subject,serverDir,'T1MapMyelin/myelin0.1');
-end
+% vals = load_mgz(subject,serverDir,'T1MapMyelin/myelin0.5'); %'transparent/oppo3'
+%vals = load_mgz(subject,serverDir,'motion_base/mt+2'); %'transparent/oppo3'
+%vals = load_mgz(subject,serverDir,'cd/cd'); %'transparent/oppo3'
+%vals = load_mgz(subject,serverDir,'prfvista_mov/vexpl'); %'transparent/oppo3'
 
+vals = load_mgz(subject,serverDir,'transparent/oppo3'); %
 
 %view(90, 0); % Sets the view towards the negative Y-axis
 %view(30, -30); % Sets the view towards the negative Y-axis
 
-figure(2); clf; hold on
+figure(1); clf; hold on
 hemi = 1;
+whichRoi = 3; % 1 mtmst 2 fst 3 both
+
 if hemi == 1
     roi2d = func2DLabelLeft;
     fst = fstLabelLeft;
@@ -67,27 +47,27 @@ if hemi == 1
     myval = vals(1:numel(lcurv),1);
     view(-90, 0);
 
-         surfacebase = ([lcurv lcurv lcurv]-min(lcurv))./(max(lcurv)-min(lcurv));
-surfacebase = zeros(size(lcurv,1),3);
-surfacebase(lcurv>0,:) = 0.2; % sulci
-surfacebase(lcurv<=0,:) = 0.5;
+    surfacebase = ([lcurv lcurv lcurv]-min(lcurv))./(max(lcurv)-min(lcurv));
+    surfacebase = zeros(size(lcurv,1),3);
+    surfacebase(lcurv>0,:) = 0.2; % sulci
+    surfacebase(lcurv<=0,:) = 0.5;
 
 else
     % Assign right hemisphere ROIs
     roi2d = func2DLabelRight;
     fst = fstLabelRight;
     lhwhite = ['/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer/' subject '/surf/rh.inflated'];
-     myval = vals(numel(lcurv)+1:end,1);
-     view(90, 0);
+    myval = vals(numel(lcurv)+1:end,1);
+    view(90, 0);
 
-     surfacebase = ([rcurv rcurv rcurv]-min(rcurv))./(max(rcurv)-min(rcurv));
-surfacebase = zeros(size(rcurv,1),3);
-surfacebase(rcurv>0,:) = 0.2; % sulci
-surfacebase(rcurv<=0,:) = 0.5;
+    surfacebase = ([rcurv rcurv rcurv]-min(rcurv))./(max(rcurv)-min(rcurv));
+    surfacebase = zeros(size(rcurv,1),3);
+    surfacebase(rcurv>0,:) = 0.2; % sulci
+    surfacebase(rcurv<=0,:) = 0.5;
 
 end
-    [vertex_coords, faces] = read_surf(lhwhite);
-    faces = faces+1;
+[vertex_coords, faces] = read_surf(lhwhite);
+faces = faces+1;
 
 % Filter faces to include only those where all vertices are in the ROI
 face2d = all(ismember(faces, roi2d), 2);
@@ -96,11 +76,11 @@ facefst = all(ismember(faces, fst), 2);
 
 
 color2d = zeros(size(rcurv,1),3);
-color2d(roi2d(rcurv(roi2d)<0),3) = 1; 
-color2d(roi2d(rcurv(roi2d)>=0),3) = 0.5; 
+color2d(roi2d(rcurv(roi2d)<0),3) = 1;
+color2d(roi2d(rcurv(roi2d)>=0),3) = 0.5;
 
 colorfst = zeros(size(rcurv,1),3);
-colorfst(fst(rcurv(fst)<0),1) = 1; 
+colorfst(fst(rcurv(fst)<0),1) = 1;
 colorfst(fst(rcurv(fst)>=0),1) = 0.6;
 
 
@@ -131,134 +111,72 @@ mycolor = myval;
 % mycolor = smoothedVals;
 
 
-
-
-
-% p0 = patch('Vertices', vertex_coords, 'Faces', faces,'FaceVertexCData',surfacebase, ...
-%      'EdgeColor', 'none','FaceColor','flat');
+p0 = patch('Vertices', vertex_coords, 'Faces', faces,'FaceVertexCData',surfacebase, ...
+      'EdgeColor', 'none','FaceColor','flat');
 plotSurf = patch('Vertices', vertex_coords, 'Faces', faces,'FaceVertexCData',mycolor, ...
-     'EdgeColor', 'none','FaceColor','flat');
+    'EdgeColor', 'none','FaceColor','flat');
 
 
-% bins = [-0.5:0.01:0.5];
-% cmaps = cmaplookup(bins,min(bins),max(bins),[],cmapsign4);
-colormap(flipud(jet));
+colormap(jet);
 colormap(hot);
-
-clim([0.2 0.8]);
-
-% clim([prctile(nonzeros(mycolor),90) prctile(nonzeros(mycolor),99.9)]);
-
-alphamask = zeros(size(mycolor));
-alphamask(fst) = 1;
-alphamask(roi2d) = 1;
-%alphamask = mycolor>=prctile(nonzeros(mycolor),90);
-alphamask(fst) = 1;
-alphamask(roi2d) = 1;
-%set(plotSurf, 'FaceVertexAlphaData', double(alphamask), 'FaceAlpha', 'interp', 'AlphaDataMapping', 'none');
-
-% patch2d = patch('Vertices', vertex_coords, 'Faces', faces(face2d, :),'FaceVertexCData',color2d, ...
-%     'FaceColor','flat', 'EdgeColor', 'none');
-% patch2d.CDataMapping = 'scaled';
-% % patch2d.FaceAlpha = 0;
-% 
-% patchfst = patch('Vertices', vertex_coords, 'Faces', faces(facefst, :),'FaceVertexCData',colorfst, ...
-%     'FaceColor','flat', 'EdgeColor', 'none');
-% patchfst.CDataMapping = 'scaled';
-% 
-% patchfst.FaceAlpha = 0;
-% %patchfst.FaceColor = [1 1 1]*0.5;
-
-
-
-
-
 daspect([1 1 1]);
 
+clim([prctile(mycolor,90) prctile(mycolor,99)]);
+
+alphamask = zeros(size(mycolor));
 
 
 
-roi_faces = faces(face2d, :);
-% Calculate edges and their occurrences across faces
-edges = [roi_faces(:,[1,2]); roi_faces(:,[2,3]); roi_faces(:,[3,1])]; % Create edges
-edges = sort(edges, 2); % Sort each row to ensure consistent ordering
-[edge_unique, ~, ic] = unique(edges, 'rows'); % Find unique edges and indices
-edge_counts = accumarray(ic, 1); % Count occurrences of each edge
-boundary_edges = edge_unique(edge_counts == 1, :); % Keep only boundary edges
+switch whichRoi
+    case 1
 
-% Initialize variables for plotting
-smooth_boundary = boundary_edges(1,:); % Start with the first boundary edge
-remaining_edges = boundary_edges(2:end,:); % Remaining edges to be processed
+        % smooth_boundary = draw_roi_outline(vertex_coords, faces, face2d)
+        % 
+        % % Plot the smooth boundary
+        % plot3(vertex_coords(smooth_boundary,1), ...
+        %     vertex_coords(smooth_boundary,2), ...
+        %     vertex_coords(smooth_boundary,3), 'b-', 'LineWidth', 5);
+alphamask(roi2d) = 1;
 
-% Loop until no remaining edges or unable to find a connected edge
-while ~isempty(remaining_edges)
-    last_vertex = smooth_boundary(end, end); % Last vertex of the current smooth boundary
-    % Find the next edge that is connected to the last vertex
-    found = false;
-    for i = 1:size(remaining_edges, 1)
-        if any(remaining_edges(i,:) == last_vertex)
-            % If found, append this edge to the smooth boundary, ensuring continuity
-            if remaining_edges(i, 1) == last_vertex
-                smooth_boundary = [smooth_boundary, remaining_edges(i, 2)];
-            else
-                smooth_boundary = [smooth_boundary, remaining_edges(i, 1)];
-            end
-            % Remove the found edge from remaining_edges
-            remaining_edges(i,:) = [];
-            found = true;
-            break; % Exit the loop after finding a connected edge
-        end
-    end
-    % If no connected edge is found, break the loop to prevent infinite loop
-    if ~found
-        break;
-    end
+    case 2
+
+        % smooth_boundary = draw_roi_outline(vertex_coords, faces, facefst)
+        % 
+        % 
+        % plot3(vertex_coords(smooth_boundary,1), ...
+        %     vertex_coords(smooth_boundary,2), ...
+        %     vertex_coords(smooth_boundary,3), 'k-', 'LineWidth', 5);
+        alphamask(fst) = 1;
+
+
+    case 3
+
+
+
+        smooth_boundary = draw_roi_outline(vertex_coords, faces, face2d)
+
+        % Plot the smooth boundary
+        plot3(vertex_coords(smooth_boundary,1), ...
+            vertex_coords(smooth_boundary,2), ...
+            vertex_coords(smooth_boundary,3), 'b-', 'LineWidth', 1);
+
+        smooth_boundary = draw_roi_outline(vertex_coords, faces, facefst)
+
+
+        plot3(vertex_coords(smooth_boundary,1), ...
+            vertex_coords(smooth_boundary,2), ...
+            vertex_coords(smooth_boundary,3), 'w-', 'LineWidth', 1);
+
+        alphamask(fst) = 1;
+        alphamask(roi2d) = 1;
+
+
 end
+alphamask1 = alphamask;
+alphamask1 = ones(size(alphamask1));
+alphamask1(mycolor<prctile(mycolor,90)) = 0;
+set(plotSurf, 'FaceVertexAlphaData', double(alphamask1), 'FaceAlpha', 'interp', 'AlphaDataMapping', 'none');
 
-% Plot the smooth boundary
-plot3(vertex_coords(smooth_boundary,1), ...
-      vertex_coords(smooth_boundary,2), ...
-      vertex_coords(smooth_boundary,3), 'b-', 'LineWidth', 1);
-
-roi_faces = faces(facefst, :);
-% Calculate edges and their occurrences across faces
-edges = [roi_faces(:,[1,2]); roi_faces(:,[2,3]); roi_faces(:,[3,1])]; % Create edges
-edges = sort(edges, 2); % Sort each row to ensure consistent ordering
-[edge_unique, ~, ic] = unique(edges, 'rows'); % Find unique edges and indices
-edge_counts = accumarray(ic, 1); % Count occurrences of each edge
-boundary_edges = edge_unique(edge_counts == 1, :); % Keep only boundary edges
-% Initialize variables for plotting
-smooth_boundary = boundary_edges(1,:); % Start with the first boundary edge
-remaining_edges = boundary_edges(2:end,:); % Remaining edges to be processed
-
-% Loop until no remaining edges or unable to find a connected edge
-while ~isempty(remaining_edges)
-    last_vertex = smooth_boundary(end, end); % Last vertex of the current smooth boundary
-    % Find the next edge that is connected to the last vertex
-    found = false;
-    for i = 1:size(remaining_edges, 1)
-        if any(remaining_edges(i,:) == last_vertex)
-            % If found, append this edge to the smooth boundary, ensuring continuity
-            if remaining_edges(i, 1) == last_vertex
-                smooth_boundary = [smooth_boundary, remaining_edges(i, 2)];
-            else
-                smooth_boundary = [smooth_boundary, remaining_edges(i, 1)];
-            end
-            % Remove the found edge from remaining_edges
-            remaining_edges(i,:) = [];
-            found = true;
-            break; % Exit the loop after finding a connected edge
-        end
-    end
-    % If no connected edge is found, break the loop to prevent infinite loop
-    if ~found
-        break;
-    end
-end
-
-plot3(vertex_coords(smooth_boundary,1), ...
-      vertex_coords(smooth_boundary,2), ...
-      vertex_coords(smooth_boundary,3), 'w-', 'LineWidth', 1);
 
 hold off;
 
@@ -274,15 +192,28 @@ axis vis3d;
 axis off
 set(gcf,'Position', [100, 100, 640*2, 480*2]); % Adjust position and size as needed
 
+%
+
+% if hemi ==1
+%     zlim([-70 0])
+%     ylim([-136 -40])
+%     xlim([-50 0])
+% else
 % 
-% %
-% ylim([-90 -30])
-% zlim([-20 55])
-% %xlim([-70 -20])
-% xlim([20 70])
+%     zlim([-70 0])
+%     ylim([-136 -40])
+%     xlim([-10 50])
+% 
+% end
 
 %plotSurf.FaceAlpha = 0;
-% 
+%
 % %% holes no curv
 % plotSurf = patch('Vertices', vertex_coords, 'Faces', faces(all(ismember(faces, setdiff(1:size(vertex_coords, 1), [roi2d;fst])), 2), :), ...
 %     'FaceColor', [0.5 0.5 0.5], 'EdgeColor', 'none');
+% hold off;
+% figure(2);
+% roi = get_my_roi(subject,serverDir);
+% vals = load_mgz(subject,serverDir,'transparent/oppo3'); %'transparent/oppo3''T1MapMyelin/myelin0.5'
+% %plot_shift(vals(:,1),roi([5 3]));xlim([0.5 2.5]);ylim([prctile(nonzeros(mycolor),90) prctile(nonzeros(mycolor),99.9)]);box on;
+% plot_shift(vals(:,1),roi([5 3]));xlim([0.5 2.5]);ylim([min(mycolor([roi2d;fst])) max(mycolor([roi2d;fst]))]);box on;

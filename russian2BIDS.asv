@@ -1,0 +1,39 @@
+
+bidsDir = '/Users/pw1246/Desktop/ms/MsBIDS';
+sourceDir = '/Users/pw1246/Desktop/RusMS/control';
+subjects = dir(sourceDir);
+subjectInfo = readtable('/Users/pw1246/Desktop/ms/MsBIDS/code/subjectInfo.xlsx');
+
+for whichSub = 1:numel(subjects)
+
+    if subjects(whichSub).name(1) ~= '.'
+
+        % find BIDS sub ID (replace patient real name)
+        subID = char(subjectInfo.subjectID(find(strcmp(subjectInfo.subjectName, subjects(whichSub).name))))
+
+        % Loop through the directory records in DICOMDIR
+        dicomDirInfo = dicominfo(fullfile(subjects(whichSub).folder,subjects(whichSub).name,'DICOMDIR'));
+        allRecords = fieldnames(dicomDirInfo.DirectoryRecordSequence);
+        for whichDcm = 1:numel(allRecords)
+            record = dicomDirInfo.DirectoryRecordSequence.(allRecords{whichDcm});
+            if strcmp(record.DirectoryRecordType, 'IMAGE') && (contains(record.ImageType, 'UNI') || contains(record.ImageType, 'ORIGINAL'))
+                %if strcmp(record.DirectoryRecordType, 'IMAGE') && contains(record.ImageType, 'UNI')
+                tmpDcm = fullfile(subjects(whichSub).folder,subjects(whichSub).name, strrep(record.ReferencedFileID, '\', filesep));
+                tmpInfo = dicominfo(tmpDcm);
+                tmpDir = fullfile(bidsDir,'sourcedata',subjects(whichSub).name,tmpInfo.SeriesDescription);
+                if ~isfolder(tmpDir)
+                    tmpDir
+                    mkdir(tmpDir);
+                end
+                tmpDcm = dicomread(tmpDcm);
+                if ~isempty(tmpDcm)
+                    dicomwrite(tmpDcm, sprintf('%s/IM-0%s.dcm',tmpDir,num2str(record.InstanceNumber)), tmpInfo, 'CreateMode', 'copy');
+                end
+            end
+        end
+
+
+    end
+end
+
+

@@ -1,7 +1,9 @@
 %% define path
 clearvars; clc; close all;
-subject = 'sub-0037';
+subject = 'sub-0255';
 bidsDir = '/Volumes/Vision/MRI/recon-bank';
+view_fv(subject,bidsDir,'mt+2','cd','oppo3','T1MapMyelin/myelin0.5');
+
 view_fv(subject,bidsDir,'T1MapMyelin/myelin0.5');
 
 %%

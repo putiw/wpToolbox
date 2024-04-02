@@ -10,7 +10,7 @@ fsDir = '/Applications/freesurfer/7.4.1';
 addpath(genpath(fullfile(githubDir, 'wpToolbox')));
 setup_user(projectName,serverDir,githubDir,fsDir);
 
-subject = 'sub-0395';
+subject = 'sub-0397';
 
 
 func2DLabelLeft = read_ROIlabel(fullfile(serverDir, 'derivatives/freesurfer', subject, 'label/0localizer/lh.func2D.label'));
@@ -19,25 +19,18 @@ fstLabelLeft = read_ROIlabel(fullfile(serverDir, 'derivatives/freesurfer', subje
 func2DLabelRight = read_ROIlabel(fullfile(serverDir, 'derivatives/freesurfer', subject, 'label/0localizer/rh.func2D.label'));
 fstLabelRight = read_ROIlabel(fullfile(serverDir, 'derivatives/freesurfer', subject, 'label/0localizer/rh.FST.label'));
 
-%%
+
 lcurv = read_curv(fullfile(serverDir,'/derivatives/freesurfer', subject,'surf', 'lh.curv'));
 rcurv = read_curv(fullfile(serverDir,'/derivatives/freesurfer', subject,'surf', 'rh.curv'));
 curv = [lcurv;rcurv];
-%%
-try
-    vals = load_mgz(subject,serverDir,'T1MapMyelin/myelin0.5'); %'transparent/oppo3'
-catch
-end
-if isempty(vals)
-    vals = load_mgz(subject,serverDir,'T1MapMyelin/myelin0.1');
-end
+
+vals = load_mgz(subject,serverDir,'T1MapMyelin/myelin0.5'); %'transparent/oppo3'
+
 %%
 
-%view(90, 0); % Sets the view towards the negative Y-axis
-%view(30, -30); % Sets the view towards the negative Y-axis
 
 figure(1); clf; hold on
-hemi = 1;
+hemi = 2;
 if hemi == 1
     roi2d = func2DLabelLeft;
     fst = fstLabelLeft;
@@ -89,6 +82,7 @@ color2d = zeros(size(rcurv,1),1);
 color2d(roi2d) = myval(roi2d);
 mycolor = myval;
 videen = colormap_videen(100);
+videen = videen(51:100,:);
 %
 % Number of vertices
 nVertices = max(faces(:));
@@ -103,7 +97,7 @@ A = sparse(edges(:, 1), edges(:, 2), 1, nVertices, nVertices);
 A = A + A.';
 D = diag(sum(A, 2)); % Degree matrix
 L = D - A; % Unnormalized graph Laplacian
-alpha = 10; % Smoothing factor; adjust as necessary for your data
+alpha = 3; % Smoothing factor; adjust as necessary for your data
 I = speye(size(A)); % Identity matrix
 smoothedVals = (I + alpha * L) \ myval; % Solve for smoothed values
 mycolor = smoothedVals;
@@ -112,7 +106,6 @@ mycolor = smoothedVals;
 
 minval = prctile(mycolor,96)-(prctile(mycolor,96)-prctile(mycolor,50))*4;
 maxval = prctile(mycolor,96);
-mycolor(mycolor<=minval+(maxval-minval)/2) = minval+(maxval-minval)/2;
 
 
 
@@ -125,12 +118,23 @@ plotSurf = patch('Vertices', vertex_coords, 'Faces', faces,'FaceVertexCData',myc
 colormap(videen);
 %colormap(hot);
 
-clim([minval+(maxval-minval)/2 maxval]);
-
-alphamask = zeros(size(mycolor));
-alphamask(fst) = 1;
-alphamask(roi2d) = 1;
-set(plotSurf, 'FaceVertexAlphaData', alphamask, 'FaceAlpha', 'interp', 'AlphaDataMapping', 'none');
+ clim([minval+(maxval-minval)/2 maxval]);
+ clim([1/1.45 1/1.15])
+% clim([mean(mycolor(mycolor>0.5))-std(mycolor(mycolor>0.5))*3 mean(mycolor(mycolor>0.5))+std(mycolor(mycolor>0.5))*3])
+% 
+% mylim = mean(mycolor);
+%clim([mean(mycolor(mycolor>mylim))-std(mycolor(mycolor>mylim))*3 mean(mycolor(mycolor>mylim))+std(mycolor(mycolor>mylim))*3])
+%clim([0.68 0.84])
+% for ii = 0.7:0.01:0.9
+%     clim([0.69 ii])
+%     drawnow
+%     pause(1)
+% end
+   
+% alphamask = zeros(size(mycolor));
+% alphamask(fst) = 1;
+% alphamask(roi2d) = 1;
+% set(plotSurf, 'FaceVertexAlphaData', alphamask, 'FaceAlpha', 'interp', 'AlphaDataMapping', 'none');
 
 % patch2d = patch('Vertices', vertex_coords, 'Faces', faces(face2d, :),'FaceVertexCData',color2d, ...
 %     'FaceColor','flat', 'EdgeColor', 'none');
@@ -249,7 +253,9 @@ axis vis3d;
 axis off
 set(gcf,'Position', [100, 100, 640*2, 480*2]); % Adjust position and size as needed
 
-% 
+xlim([-60 60])
+ylim([-140 140])
+zlim([-80 80])
 % %
 % ylim([-90 -30])
 % zlim([-20 55])
