@@ -2,8 +2,8 @@
 addpath('/Users/pw1246/Documents/MATLAB/fieldtrip');
 ft_defaults;                               % initialise FieldTrip
 
-srcRoot  = '/Users/pw1246/Library/CloudStorage/Box-Box/EEG-FMRI/Data/fingertapping/rawdata/test';
-bidsRoot = '/Users/pw1246/Library/CloudStorage/Box-Box/EEG-FMRI/Data/fingertapping/bids';
+srcRoot  = '...';
+bidsRoot = '/Users/pw1246/Library/CloudStorage/Box-Box/EEG-FMRI/Data/fingertapping/rawdata';
 
 subID    = '0665';
 sesID    = '01';
