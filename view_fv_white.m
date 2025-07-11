@@ -88,9 +88,8 @@ for whichHemi = 1:numel(hemi)
     % find the inflated surface
     inflated = sprintf('%s/surf/%sh.inflated',subjectDir,hemi{whichHemi});
     %inflated = sprintf('%s/surf/%sh.sphere',subjectDir,hemi{whichHemi});
-    %inflated = sprintf('%s/surf/%sh.white',subjectDir,hemi{whichHemi});
+    inflated = sprintf('%s/surf/%sh.white',subjectDir,hemi{whichHemi});
     %inflated = sprintf('%s/surf/%sh.midthickness',subjectDir,hemi{whichHemi});
-    %inflated = sprintf('%s/surf/%sh.pial',subjectDir,hemi{whichHemi});
 
     % check if the inflated surf file exists
     if ~exist(inflated,'file')
@@ -106,9 +105,7 @@ for whichHemi = 1:numel(hemi)
         colormapName = fileParts{4}; % rename it so we don't forget what this fileParts variable is
         for whichFolder = 1:numel(folder)
             whereOverlay = sprintf('%s/%sh.%s.mgz', folder{whichFolder}, hemi{whichHemi}, overlayName);
-            %overlayCmd = [overlayCmd, sprintf(':overlay=%s', whereOverlay)];
-            overlayCmd = [overlayCmd, sprintf(':overlay=%s:overlay_color=colorwheel,inverse:overlay_threshold=95,99,percentile:overlay_smooth=5', whereOverlay)];
-
+            overlayCmd = [overlayCmd, sprintf(':overlay=%s', whereOverlay)];
             % add the customized color map if we have one
             overlayCmd = custom_colormap(derivDir,overlayName,colormapName,overlayCmd,hemi{whichHemi});
         end
@@ -130,11 +127,7 @@ for whichHemi = 1:numel(hemi)
         mtlabel = sprintf('%s/label/retinotopy_RE/%sh.pMT_REmanual.label', subjectDir,hemi{whichHemi});
         mtlabel2 = sprintf('%s/label/0localizer/%sh.func2D.label', subjectDir,hemi{whichHemi});
 
-        % show prf label also
         cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=1:label=%s:label_outline=1:label_color=blue:label_opacity=1:label=%s:label_outline=1:label_color=black:label_opacity=1:label=%s:label_outline=1:label_color=white:label_opacity=1',cmd,inflated,overlayCmd,mtlabel,mstlabel,fstlabel,mtlabel2);
-        % show func label only
-        %cmd = sprintf('%s -f %s%s:label=%s:label_outline=1:label_color=black:label_opacity=1:label=%s:label_outline=1:label_color=black:label_opacity=1', cmd, inflated, overlayCmd, fstlabel, mtlabel2);
-
 
         % fstlabel = sprintf('%s/label/0localizer/%sh.FST.label', subjectDir,hemi{whichHemi});
         % mtlabel = sprintf('%s/label/0localizer/%sh.func2D.label', subjectDir,hemi{whichHemi});
@@ -236,7 +229,6 @@ elseif contains(lower(overlayName),'cdratio1')
 
 elseif ismember(overlayName,{'mt+1','mt+2','mt+12','bio1','cw','ccw','cwccw','in','out','inout','upper','lower'})
     whichMap = 'rainbow'; % default rainbow color map for bold beta weights 0:0.1:0.7
-    whichMap = [];
 
 
 elseif ~strcmp(colormapName,'NA') % mannual input overwrites default

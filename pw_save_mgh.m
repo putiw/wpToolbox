@@ -8,7 +8,9 @@ rightidx = (1:numel(rcurv))+numel(lcurv);
 
 
 resultsdir = [bidsDir '/derivatives/' derivDir '/' subject];
-mkdir(resultsdir)
+if ~isdir(resultsdir)
+    mkdir(resultsdir)
+end
 
 
 mgz = MRIread(fullfile(bidsDir,'derivatives/freesurfer',subject, 'mri', 'orig.mgz'));

@@ -30,14 +30,27 @@ end
 
         
 % freesurfer settings
-fslDir = '/usr/local/fsl';
 PATH = getenv('PATH'); 
-setenv('PATH', [PATH ':' fslDir '/bin']); % add freesurfer/bin to path
+
+fslDir = '/usr/local/fsl';
+if ~contains(PATH, [fslDir '/bin'])
+    setenv('PATH', [PATH ':' fslDir '/bin']); % add freesurfer/bin to path
+end
 setenv('FSLDIR', fslDir);
 
-setenv('PATH', sprintf('/usr/local/bin:%s', getenv('PATH'))); % add /usr/local/bin to PATH
-setenv('PATH', [fsDir '/bin:' getenv('PATH')]);
-setenv('PATH', [getenv('PATH') ':/usr/local/fsl/bin']);
+if ~contains(getenv('PATH'), '/usr/local/bin')
+    setenv('PATH', sprintf('/usr/local/bin:%s', getenv('PATH'))); % add /usr/local/bin to PATH
+end
+
+fsDir = '/usr/local/freesurfer'; % assuming fsDir is defined somewhere
+if ~contains(getenv('PATH'), [fsDir '/bin'])
+    setenv('PATH', [fsDir '/bin:' getenv('PATH')]);
+end
+
+if ~contains(getenv('PATH'), '/usr/local/fsl/bin')
+    setenv('PATH', [getenv('PATH') ':/usr/local/fsl/bin']);
+end
+
 setenv('FREESURFER_HOME', fsDir);
 addpath(genpath(fullfile(fsDir, 'matlab')));
 setenv('SUBJECTS_DIR', [bidsDir '/derivatives/freesurfer']);

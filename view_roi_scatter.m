@@ -10,10 +10,10 @@ fsDir = '/Applications/freesurfer/7.4.1';
 addpath(genpath(fullfile(githubDir, 'wpToolbox')));
 setup_user(projectName,serverDir,githubDir,fsDir);
 
-subject = 'sub-0426';
+subject = 'sub-0037';
 roisl = niftiread(['/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer/' subject '/label/0localizer/lh.rois_vol.nii.gz']);
 roisr = niftiread(['/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer/' subject '/label/0localizer/rh.rois_vol.nii.gz']);
-rois = roisl+roisr;
+rois = roisr;%roisl+roisr;
 niiPath = ['/Volumes/Vision/MRI/recon-bank/derivatives/freesurfer/' subject '/mri/registered_brainmask_to_T1w.nii.gz'];
 if isfile(niiPath)
 else

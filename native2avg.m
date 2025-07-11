@@ -8,13 +8,6 @@ function native2avg(whichSub, bidsDir, varargin)
 % hemi - e.g. - 'l' - optional, if not defined then we will plot both hemisphere
 % varargin - e.g. 'maps/motion' - 'subfolderName/mgzFileName' - look for matching files only in the defined subfolder within derivatives
 
-% example usage:
-% subject = 'sub-0248'
-% bidsDir = '~/Documents/MRI/bids';
-% view_fv(subject, bidsDir, 'maps/motion', 'MyelinMap',);
-% % or
-% view_fv(subject, bidsDir, 'lh', 'mt+2', 'cw:rainbow','prfvista_mov/eccen');
-
 derivDir = [bidsDir '/derivatives'];
 subject = [];
 %% check if BIDS derivatives directory exsits

@@ -1,0 +1,299 @@
+% Parse ARI validation reports and create Excel summary
+% This script reads all ari-validation-details.txt files and extracts key information
+
+clear; clc;
+
+% Base directory
+base_dir = '/Volumes/CTP-XNAT/xnat-main/xnat-data/archive/rokerslab_ari-hfs_2024_001';
+output_file = fullfile('/Users/pw1246/Desktop/projects/xnatpipeline', 'validation_summary.xlsx');
+
+% First, find all subject directories
+arc001_dir = fullfile(base_dir, 'arc001');
+all_subjects = dir(fullfile(arc001_dir, 'Subject_*'));
+all_subjects = all_subjects([all_subjects.isdir]);
+fprintf('Found %d subject directories\n', length(all_subjects));
+
+
+% Create a map of subject IDs to validation files for quick lookup
+validation_map = containers.Map();
+for i = 1:size(all_subjects,1)
+    whichfile = fullfile(base_dir,'arc001', all_subjects(i).name, 'RESOURCES/ari-validation/ari-validation-details.txt');
+    if isfile(whichfile)
+        subject_match = regexp(fileread(whichfile), 'Starting validation for subject: (sub-\d+)', 'tokens');
+        fprintf('Loading  %s \n', all_subjects(i).name);
+        subject_id = subject_match{1}{1};
+        validation_map(subject_id) = fullfile(base_dir,'arc001', all_subjects(i).name, 'RESOURCES/ari-validation/ari-validation-details.txt');
+    end
+end
+
+
+% Initialize data structure to store results
+results = [];
+
+% Process each subject directory
+for i = 1:length(all_subjects)
+    subject_folder = all_subjects(i).name;
+    
+    % Extract subject ID from folder name (e.g., Subject_0021_ses-01 -> sub-0021)
+    subject_num_match = regexp(subject_folder, 'Subject_(\d+)', 'tokens');
+    if ~isempty(subject_num_match)
+        subject_id = sprintf('sub-%s', subject_num_match{1}{1});
+    else
+        continue;
+    end
+    
+    % Initialize record for this subject with empty/default values
+    record = struct();
+    record.SubjectID = string(subject_id);
+    record.SubjectFolder = string(subject_folder);
+    
+    % Overview fields (these come first)
+    record.Overall_Status = "No Validation";
+    record.Total_Missing_Files = NaN;
+    record.Total_Unexpected_Files = NaN;
+    record.Has_Property_Issues = false;  % Use logical instead of string
+    record.Sbref_Direction = "N/A";
+    record.IntendedFor = "N/A";
+    record.DWI_Parameters = "N/A";
+    
+    % Detail fields (initialized as empty)
+    record.ANAT_Found = NaN;
+    record.ANAT_Total = NaN;
+    record.ANAT_Missing = NaN;
+    record.FUNC_Found = NaN;
+    record.FUNC_Total = NaN;
+    record.FUNC_Missing = NaN;
+    record.FMAP_Found = NaN;
+    record.FMAP_Total = NaN;
+    record.FMAP_Missing = NaN;
+    record.DWI_Found = NaN;
+    record.DWI_Total = NaN;
+    record.DWI_Missing = NaN;
+    record.PERF_Found = NaN;
+    record.PERF_Total = NaN;
+    record.PERF_Missing = NaN;
+    record.Missing_Files_List = "";
+    record.Unexpected_Files_List = "";
+    record.File_Property_Issues = "";
+    
+    % Check if this subject has a validation file
+    if isKey(validation_map, subject_id)
+        file_path = validation_map(subject_id);
+        file_content = fileread(file_path);
+    
+        % Extract missing files counts for each modality
+        % ANAT
+        anat_match = regexp(file_content, 'ANAT: \((\d+)/(\d+) files found\)', 'tokens');
+        if ~isempty(anat_match)
+            record.ANAT_Found = str2double(anat_match{1}{1});
+            record.ANAT_Total = str2double(anat_match{1}{2});
+            record.ANAT_Missing = record.ANAT_Total - record.ANAT_Found;
+        end
+        
+        % FUNC
+        func_match = regexp(file_content, 'FUNC: \((\d+)/(\d+) files found\)', 'tokens');
+        if ~isempty(func_match)
+            record.FUNC_Found = str2double(func_match{1}{1});
+            record.FUNC_Total = str2double(func_match{1}{2});
+            record.FUNC_Missing = record.FUNC_Total - record.FUNC_Found;
+        end
+        
+        % FMAP
+        fmap_match = regexp(file_content, 'FMAP: \((\d+)/(\d+) files found\)', 'tokens');
+        if ~isempty(fmap_match)
+            record.FMAP_Found = str2double(fmap_match{1}{1});
+            record.FMAP_Total = str2double(fmap_match{1}{2});
+            record.FMAP_Missing = record.FMAP_Total - record.FMAP_Found;
+        end
+        
+        % DWI
+        dwi_match = regexp(file_content, 'DWI: \((\d+)/(\d+) files found\)', 'tokens');
+        if ~isempty(dwi_match)
+            record.DWI_Found = str2double(dwi_match{1}{1});
+            record.DWI_Total = str2double(dwi_match{1}{2});
+            record.DWI_Missing = record.DWI_Total - record.DWI_Found;
+        end
+        
+        % PERF
+        perf_match = regexp(file_content, 'PERF: \((\d+)/(\d+) files found\)', 'tokens');
+        if ~isempty(perf_match)
+            record.PERF_Found = str2double(perf_match{1}{1});
+            record.PERF_Total = str2double(perf_match{1}{2});
+            record.PERF_Missing = record.PERF_Total - record.PERF_Found;
+        end
+        
+        % Extract specific missing files
+        missing_files_pattern = 'missing \w+ files: ([^\n]+)';
+        missing_matches = regexp(file_content, missing_files_pattern, 'tokens');
+        all_missing_files = '';
+        for j = 1:length(missing_matches)
+            if j > 1
+                all_missing_files = [all_missing_files, '; '];
+            end
+            all_missing_files = [all_missing_files, missing_matches{j}{1}];
+        end
+        record.Missing_Files_List = string(all_missing_files);
+        
+        % Extract unexpected files
+        unexpected_pattern = 'has unexpected files in \w+: ([^\n]+)';
+        unexpected_matches = regexp(file_content, unexpected_pattern, 'tokens');
+        all_unexpected_files = '';
+        for j = 1:length(unexpected_matches)
+            if j > 1
+                all_unexpected_files = [all_unexpected_files, '; '];
+            end
+            all_unexpected_files = [all_unexpected_files, unexpected_matches{j}{1}];
+        end
+        record.Unexpected_Files_List = string(all_unexpected_files);
+        
+        % Count unexpected files
+        if ~isempty(all_unexpected_files)
+            record.Total_Unexpected_Files = length(strsplit(all_unexpected_files, ', '));
+        else
+            record.Total_Unexpected_Files = 0;
+        end
+        
+        % Extract file property issues
+        property_issues = '';
+        
+        % Look for incorrect dimensions
+        dim_issues = regexp(file_content, '(sub-\d+[^:]+):\s*Incorrect dimensions[^\n]+', 'match');
+        for j = 1:length(dim_issues)
+            if j > 1 || ~isempty(property_issues)
+                property_issues = [property_issues, '; '];
+            end
+            property_issues = [property_issues, dim_issues{j}];
+        end
+        
+        % Look for incorrect TR
+        tr_issues = regexp(file_content, 'Incorrect TR:[^\n]+', 'match');
+        for j = 1:length(tr_issues)
+            if j > 1 || ~isempty(property_issues)
+                property_issues = [property_issues, '; '];
+            end
+            property_issues = [property_issues, tr_issues{j}];
+        end
+        
+        record.File_Property_Issues = string(property_issues);
+        record.Has_Property_Issues = ~isempty(property_issues);
+        
+        % Extract validation summary results
+        summary_section = regexp(file_content, '=== VALIDATION SUMMARY ===(.*)', 'tokens', 'dotall');
+        if ~isempty(summary_section)
+            summary_text = summary_section{1}{1};
+            
+            % sbref Direction
+            sbref_match = regexp(summary_text, 'Sbref Direction: (\w+)', 'tokens');
+            if ~isempty(sbref_match)
+                record.Sbref_Direction = string(sbref_match{1}{1});
+            end
+            
+            % IntendedFor
+            intended_match = regexp(summary_text, 'IntendedFor: (\w+)', 'tokens');
+            if ~isempty(intended_match)
+                record.IntendedFor = string(intended_match{1}{1});
+            end
+            
+            % DWI parameters
+            dwi_param_match = regexp(summary_text, 'DWI parameters: (\w+)', 'tokens');
+            if ~isempty(dwi_param_match)
+                record.DWI_Parameters = string(dwi_param_match{1}{1});
+            end
+        end
+        
+        % Calculate total missing files
+        record.Total_Missing_Files = 0;
+        if ~isnan(record.ANAT_Missing), record.Total_Missing_Files = record.Total_Missing_Files + record.ANAT_Missing; end
+        if ~isnan(record.FUNC_Missing), record.Total_Missing_Files = record.Total_Missing_Files + record.FUNC_Missing; end
+        if ~isnan(record.FMAP_Missing), record.Total_Missing_Files = record.Total_Missing_Files + record.FMAP_Missing; end
+        if ~isnan(record.DWI_Missing), record.Total_Missing_Files = record.Total_Missing_Files + record.DWI_Missing; end
+        if ~isnan(record.PERF_Missing), record.Total_Missing_Files = record.Total_Missing_Files + record.PERF_Missing; end
+        
+        % Overall validation status
+        has_issues = record.Total_Missing_Files > 0 || ...
+                     record.Total_Unexpected_Files > 0 || ...
+                     record.Has_Property_Issues || ...
+                     strcmp(record.DWI_Parameters, 'Mismatching');
+        
+        if has_issues
+            record.Overall_Status = "Has Issues";
+        else
+            record.Overall_Status = "Passed";
+        end
+    end
+    
+    % Add to results
+    if isempty(results)
+        results = record;
+    else
+        results(end+1) = record;
+    end
+    
+    % Progress update
+    if mod(i, 25) == 0
+        fprintf('Processed %d/%d subjects...\n', i, length(all_subjects));
+    end
+end
+
+% Convert to table with specific column order
+% Overview columns first, then details
+column_order = {
+    'SubjectID', 'SubjectFolder', 'Overall_Status', 'Total_Missing_Files', 'Total_Unexpected_Files', ...
+    'Has_Property_Issues', 'Sbref_Direction', 'IntendedFor', 'DWI_Parameters', ...
+    'ANAT_Found', 'ANAT_Total', 'ANAT_Missing', ...
+    'FUNC_Found', 'FUNC_Total', 'FUNC_Missing', ...
+    'FMAP_Found', 'FMAP_Total', 'FMAP_Missing', ...
+    'DWI_Found', 'DWI_Total', 'DWI_Missing', ...
+    'PERF_Found', 'PERF_Total', 'PERF_Missing', ...
+    'Missing_Files_List', 'Unexpected_Files_List', 'File_Property_Issues'
+};
+
+results_table = struct2table(results);
+results_table = results_table(:, column_order);
+
+% Sort by subject ID
+results_table = sortrows(results_table, 'SubjectID');
+
+% Create summary statistics
+fprintf('\n=== Summary Statistics ===\n');
+fprintf('Total subjects: %d\n', height(results_table));
+fprintf('Subjects with validation: %d\n', sum(results_table.Overall_Status ~= "No Validation"));
+fprintf('Subjects without validation: %d\n', sum(results_table.Overall_Status == "No Validation"));
+fprintf('Subjects with issues: %d\n', sum(results_table.Overall_Status == "Has Issues"));
+fprintf('Subjects passed: %d\n', sum(results_table.Overall_Status == "Passed"));
+
+% Filter only validated subjects for missing file statistics
+validated_mask = results_table.Overall_Status ~= "No Validation";
+fprintf('\nMissing files by modality (among validated subjects):\n');
+fprintf('  ANAT: %d subjects\n', sum(results_table.ANAT_Missing(validated_mask) > 0));
+fprintf('  FUNC: %d subjects\n', sum(results_table.FUNC_Missing(validated_mask) > 0));
+fprintf('  FMAP: %d subjects\n', sum(results_table.FMAP_Missing(validated_mask) > 0));
+fprintf('  DWI: %d subjects\n', sum(results_table.DWI_Missing(validated_mask) > 0));
+fprintf('  PERF: %d subjects\n', sum(results_table.PERF_Missing(validated_mask) > 0));
+
+% Save to Excel
+
+writetable(results_table, output_file, 'Sheet', 'Validation Results');
+
+% Create a summary sheet with statistics
+summary_data = {
+    'Metric', 'Count';
+    'Total Subjects', height(results_table);
+    'Subjects with Validation', sum(results_table.Overall_Status ~= "No Validation");
+    'Subjects without Validation', sum(results_table.Overall_Status == "No Validation");
+    'Subjects with Issues', sum(results_table.Overall_Status == "Has Issues");
+    'Subjects Passed', sum(results_table.Overall_Status == "Passed");
+    'Subjects Missing ANAT', sum(results_table.ANAT_Missing(validated_mask) > 0);
+    'Subjects Missing FUNC', sum(results_table.FUNC_Missing(validated_mask) > 0);
+    'Subjects Missing FMAP', sum(results_table.FMAP_Missing(validated_mask) > 0);
+    'Subjects Missing DWI', sum(results_table.DWI_Missing(validated_mask) > 0);
+    'Subjects Missing PERF', sum(results_table.PERF_Missing(validated_mask) > 0);
+    'Subjects with Unexpected Files', sum(results_table.Total_Unexpected_Files(validated_mask) > 0);
+    'Subjects with Property Issues', sum(results_table.Has_Property_Issues(validated_mask));
+    'Subjects with DWI Parameter Mismatch', sum(strcmp(results_table.DWI_Parameters(validated_mask), 'Mismatching'))
+};
+
+summary_table = cell2table(summary_data(2:end,:), 'VariableNames', summary_data(1,:));
+writetable(summary_table, output_file, 'Sheet', 'Summary Statistics');
+
+fprintf('\nResults saved to: %s\n', output_file);

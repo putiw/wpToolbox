@@ -30,7 +30,7 @@ vals = load_mgz(subject,serverDir,'T1MapMyelin/myelin0.5'); %'transparent/oppo3'
 
 
 figure(1); clf; hold on
-hemi = 2;
+hemi = 1;
 if hemi == 1
     roi2d = func2DLabelLeft;
     fst = fstLabelLeft;

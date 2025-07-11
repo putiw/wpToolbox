@@ -50,13 +50,17 @@ switch space % switch between volumn or surface
             func = cell(2,1); % initialize for 2 hemi
             
             for iH = 1:numel(hemi)
-                % % 2023 
-                %fileName = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_dir-PA_run-%s_space-%s_hemi-%s_bold.func',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),space,hemi{iH});
+                % % 2023
+                fileName = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_dir-PA_run-%s_space-%s_hemi-%s_bold.func',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),space,hemi{iH});
+
                 % % 2024
-                fileName = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_run-%s_space-%s_hemi-%s_bold.func',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),space,hemi{iH});
+                if ~isfile([fileName '.gii'])
+                    fileName = sprintf('%s/derivatives/fmriprep/%s/%s/func/%s_%s_task-%s_run-%s_space-%s_hemi-%s_bold.func',bidsDir,sub,ses,sub,ses,task,num2str(whichRun),space,hemi{iH});
+                end
+
                 input = [fileName '.gii'];
                 output = [fileName fileType]; % the file type that we want to load
-                
+
                 % check to see if data exists in the desired fileType, if not,
                 % mir_convert file from gii
                 if ~exist(output)

@@ -10,7 +10,9 @@ fsDir = '/Applications/freesurfer/7.4.1';
 addpath(genpath(fullfile(githubDir, 'wpToolbox')));
 setup_user(projectName,serverDir,githubDir,fsDir);
 
-subject = 'sub-0037';
+ subjects = {'sub-0037','sub-0201','sub-0248','sub-0250','sub-0255','sub-0392','sub-0395','sub-0397','sub-0426'};
+
+subject = subjects{1};
 
 
 func2DLabelLeft = read_ROIlabel(fullfile(serverDir, 'derivatives/freesurfer', subject, 'label/0localizer/lh.func2D.label'));
@@ -31,7 +33,43 @@ curv = [lcurv;rcurv];
 %vals = load_mgz(subject,serverDir,'cd/cd'); %'transparent/oppo3'
 %vals = load_mgz(subject,serverDir,'prfvista_mov/vexpl'); %'transparent/oppo3'
 
-vals = load_mgz(subject,serverDir,'transparent/oppo3'); %
+%vals = load_mgz(subject,serverDir,'transparent/oppo3'); %
+vals2 = load_mgz(subject,serverDir,'motion_base/mt+2'); %
+vals3 = load_mgz(subject,serverDir,'cd/cd'); %
+
+
+valMean = (vals2+vals3)./2;
+% 
+vals = (vals3 - vals2) .* vals3;
+vals = vals3;
+% 
+% % Reshape to vectors
+% vals2_vec = vals2(:);
+% vals3_vec = vals3(:);
+% 
+% % Compute percentile ranks
+% vals2_rank = tiedrank(vals2_vec);
+% vals3_rank = tiedrank(vals3_vec);
+% 
+% % Scale ranks to [0, 100]
+% vals2_pct = 100 * (vals2_rank - 1) / (numel(vals2_rank) - 1);
+% vals3_pct = 100 * (vals3_rank - 1) / (numel(vals3_rank) - 1);
+% 
+% % Reshape back to original size
+% vals2_pct = reshape(vals2_pct, size(vals2));
+% vals3_pct = reshape(vals3_pct, size(vals3));
+% 
+% % % Subtract
+% % vals = vals3_pct - vals2_pct;
+% 
+% valMean = (vals2_pct+vals3_pct)./2;
+% 
+% vals = (vals2_pct - vals3_pct) .* valMean;
+% 
+% vals = vals3_pct - vals;
+
+
+%vals = load_mgz(subject,serverDir,'cd/cd'); %'transparent/oppo3'
 
 %view(90, 0); % Sets the view towards the negative Y-axis
 %view(30, -30); % Sets the view towards the negative Y-axis
@@ -91,8 +129,8 @@ color2d = zeros(size(rcurv,1),1);
 color2d(roi2d) = myval(roi2d);
 mycolor = myval;
 
-%
-% Number of vertices
+% %
+% % Number of vertices
 % nVertices = max(faces(:));
 % % Edges: each row represents an edge between two vertices
 % edges = [faces(:, [1, 2]); faces(:, [2, 3]); faces(:, [3, 1])];
@@ -105,7 +143,7 @@ mycolor = myval;
 % A = A + A.';
 % D = diag(sum(A, 2)); % Degree matrix
 % L = D - A; % Unnormalized graph Laplacian
-% alpha = 1; % Smoothing factor; adjust as necessary for your data
+% alpha = 0.3; % Smoothing factor; adjust as necessary for your data
 % I = speye(size(A)); % Identity matrix
 % smoothedVals = (I + alpha * L) \ myval; % Solve for smoothed values
 % mycolor = smoothedVals;
@@ -118,7 +156,7 @@ plotSurf = patch('Vertices', vertex_coords, 'Faces', faces,'FaceVertexCData',myc
 
 
 colormap(jet);
-colormap(hot);
+%colormap(hot);
 daspect([1 1 1]);
 
 clim([prctile(mycolor,90) prctile(mycolor,99)]);
@@ -158,23 +196,24 @@ alphamask(roi2d) = 1;
         % Plot the smooth boundary
         plot3(vertex_coords(smooth_boundary,1), ...
             vertex_coords(smooth_boundary,2), ...
-            vertex_coords(smooth_boundary,3), 'b-', 'LineWidth', 1);
+            vertex_coords(smooth_boundary,3), 'w-', 'LineWidth', 3);
 
         smooth_boundary = draw_roi_outline(vertex_coords, faces, facefst)
 
 
         plot3(vertex_coords(smooth_boundary,1), ...
             vertex_coords(smooth_boundary,2), ...
-            vertex_coords(smooth_boundary,3), 'w-', 'LineWidth', 1);
+            vertex_coords(smooth_boundary,3), 'k-', 'LineWidth', 3);
 
         alphamask(fst) = 1;
         alphamask(roi2d) = 1;
 
 
 end
+
 alphamask1 = alphamask;
 alphamask1 = ones(size(alphamask1));
-alphamask1(mycolor<prctile(mycolor,90)) = 0;
+%alphamask1(mycolor<prctile(mycolor,90)) = 0;
 set(plotSurf, 'FaceVertexAlphaData', double(alphamask1), 'FaceAlpha', 'interp', 'AlphaDataMapping', 'none');
 
 

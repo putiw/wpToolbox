@@ -16,13 +16,13 @@ for iRun = 1:nRuns
 
     for iH = 1:numel(hemi)
 
-        switch matchingRows.task{1}
-            case 'loc'
-            fileName = sprintf('%s/%s_%s_task-%s_run-%s_space-%s_hemi-%s_bold.func',subDir,matchingRows.subject{iRun},matchingRows.session{iRun},matchingRows.task{iRun},num2str(whichRun),space,hemi{iH});
-            otherwise
-            fileName = sprintf('%s/%s_%s_task-%s_dir-PA_run-%s_space-%s_hemi-%s_bold.func',subDir,matchingRows.subject{iRun},matchingRows.session{iRun},matchingRows.task{iRun},num2str(whichRun),space,hemi{iH});
 
+        fileName = sprintf('%s/%s_%s_task-%s_run-%s_space-%s_hemi-%s_bold.func',subDir,matchingRows.subject{iRun},matchingRows.session{iRun},matchingRows.task{iRun},num2str(whichRun),space,hemi{iH});
+
+        if ~isfile([fileName '.gii'])
+            fileName = sprintf('%s/%s_%s_task-%s_dir-PA_run-%s_space-%s_hemi-%s_bold.func',subDir,matchingRows.subject{iRun},matchingRows.session{iRun},matchingRows.task{iRun},num2str(whichRun),space,hemi{iH});
         end
+
         input = [fileName '.gii'];
         output = [fileName fileType]; % the file type that we want to load
 
